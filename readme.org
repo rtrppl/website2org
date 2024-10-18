@@ -57,8 +57,8 @@ Additionally you can set these values:
 #+begin_src elisp
 ;; If wget should be called with a differnt command.
 (setq website2org-wget-cmd "wget -q -O ") 
-;; Change the name of the local buffer file.
-(setq website2org-cache-filename "~/website2org-cache.html") > name of the local  buffer file
+;; Change the name of the local cache file.
+(setq website2org-cache-filename "~/website2org-cache.html") 
 ;; Turn website2org-additional-meta nil if not applicable. This is for
 ;; use in orgrr (https://github.com/rtrppl/orgrr).
 (setq website2org-additional-meta "#+roam_tags: website orgrr-project") 
