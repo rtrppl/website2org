@@ -1,14 +1,21 @@
 #+title: website2org.el
 
-*website2org.el* downloads a website, transforms it into minimalist Orgmode, and presents the results into either a temporary Orgmode buffer or into a .org file into a specified directory.
+#+BEGIN_HTML
+<img src="/website2org.gif" alt="website2org in action">
+#+END_HTML
 
-I have two primary uses cases for this. 1) Local storage/read it later: I often store websites locally to link them (and specific paragraphs) to my Zettelkasten in orgrr. (They are downloaded to the directory "findings", an orgrr container, and the tag "orgrr-project" is automatically added. See orgrr for details.) 2) To quickly see the contents of a website in mastodon.el. 
 
-This package is still in a very early stage. I use it to replace =orgrr-save-website=, which uses =org-web-tools--eww-readable= and =org-web-tools--html-to-org-with-pandoc= and becomes more fragile by the day. It also often does struggle to produce the kind of Orgmode I want to have. The package requires =wget= but does not rely on Pandoc.
+*website2org.el* downloads a website, transforms it into minimalist Orgmode, and presents the results into either a temporary Orgmode buffer or creates a .org file in a specified directory.
+
+I have two primary uses cases for this. 1) Local storage/read it later: I often store websites locally to link them (and specific paragraphs) to my Zettelkasten in [[https://github.com/rtrppl/orgrr][orgrr]]. (They are downloaded to the directory "findings", an orgrr container, and the tag "orgrr-project" is automatically added. See orgrr for details.) 2) To quickly see the contents of a website in [[https://codeberg.org/martianh/mastodon.el][mastodon.el]]. 
+
+This package is still in a very early stage. I use it to replace =orgrr-save-website=, which draws on =org-web-tools--eww-readable= and =org-web-tools--html-to-org-with-pandoc= but has become more fragile by the day. =orgrr-save-website= also often does struggle to produce the kind of Orgmode I want to have - with as little HTML fragments as possible. 
+
+website2org requires [[https://www.gnu.org/software/wget/][wget]] but does not use [[https://pandoc.org/][Pandoc]]. The package parses HTML to achieve rather minimal looking Orgmode files, see below.
 
 ** Minimal Orgmode
 
-website2org ignores all information before the first =<h1>= headline and everything coming after the =<footer>=. All data on images, source, =<div>= and similar types of tags are also ignored. It respects all paragraphs, headlines, lists, block quotes, =<pre>= (line breaks are still an issue here), links, =<strong>=, and =<em>=. Tabs and spaces are reduced to one space. A new line cannot start with a space (or "- " followed by nothing).
+website2org ignores all information before the first =<h1>= headline and everything coming after the =<footer>=. All data about images, source, =<div>= and similar types of tags are also ignored. It respects all paragraphs, headlines, lists, block quotes, =<pre>= (line breaks are still an issue here), links, =<strong>=, and =<em>=. Tabs and multiple spaces are reduced to one space. A new line cannot start with a space (or "- " followed by nothing).
 
 ** Change log
 

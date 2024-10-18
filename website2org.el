@@ -273,8 +273,8 @@ Currently this function is not needed/used."
  (setq content (replace-regexp-in-string "</b>" "" content))
  (setq content (replace-regexp-in-string "<i>" "" content))
  (setq content (replace-regexp-in-string "</i>" "" content))
- (setq content (replace-regexp-in-string "<em>" "/" content))
- (setq content (replace-regexp-in-string "</em>" "/" content))
+ (setq content (replace-regexp-in-string "<em>" " /" content))
+ (setq content (replace-regexp-in-string "</em>" "/ " content))
  (setq content (replace-regexp-in-string "<ul>" "" content))
  (setq content (replace-regexp-in-string "</ul>" "\n" content))
  (setq content (replace-regexp-in-string "</li>" "</li>\n" content))
@@ -345,9 +345,7 @@ Currently this function is not needed/used."
 ;; no empty lines that just start with - 
     (setq content (replace-regexp-in-string "^- $" "" content))
 ;; no empty lines that just start with \  
-    (setq content (replace-regexp-in-string "[\\]*$" "" content))
-;; no space before a /  
-    (setq content (replace-regexp-in-string "[\s]*/" "/" content))  
+    (setq content (replace-regexp-in-string "[\\]*$" "" content)) 
 ;; no empty lines that just start with * 
     (setq content (replace-regexp-in-string "[\*]* $" "" content))
 ;; no empty lines that just start with *  
