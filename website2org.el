@@ -212,6 +212,7 @@ website2org-url-to-org. Result will be presented in a buffer."
   (setq content (replace-regexp-in-string "<em\s\\([^>]*\\)>" "<em>" content))
   (setq content (replace-regexp-in-string "<i\s\\([^>]*\\)>" "<i>" content))
   (setq content (replace-regexp-in-string "<img\s\\([^>]*\\)>" "" content))
+  (setq content (replace-regexp-in-string "\\(<figure[\s>]\\)\\s-*\\([^\0]+?\\)\\(</figure>\\)" "" content))
   (setq content (replace-regexp-in-string "<h1\\([^>]*\\)>" "<h1>" content))
   (setq content (replace-regexp-in-string "<h2\\([^>]*\\)>" "<h2>" content))
   (setq content (replace-regexp-in-string "<h3\\([^>]*\\)>" "<h3>" content))
@@ -311,6 +312,9 @@ Currently this function is not needed/used."
 (defun website2org-cleanup-org-weird-characters (content)
   "Cleaning-up weird characters in the Orgmode content."
   (setq content (replace-regexp-in-string "&quot;" "\"" content))
+  (setq content (replace-regexp-in-string "&ldquo;" "\"" content))
+  (setq content (replace-regexp-in-string "&rdquo;" "\"" content))
+  (setq content (replace-regexp-in-string "&rsquo;" "'" content))
   (setq content (replace-regexp-in-string "&nbsp;" " " content))
   (setq content (replace-regexp-in-string "&gt;" ">" content))
   (setq content (replace-regexp-in-string "&#8220;" "\"" content))
