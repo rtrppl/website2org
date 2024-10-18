@@ -4,9 +4,9 @@
 
 I have two primary uses cases for this. 1) Local storage/read it later: I often store websites locally to link them (and specific paragraphs) to my Zettelkasten in orgrr. (They are downloaded to the directory "findings", an orgrr container, and the tag "orgrr-project" is automatically added. See orgrr for details.) 2) To quickly see the contents of a website in mastodon.el. 
 
-This package is still in a very early stage. I use it to replace Pandoc via org-web-tools, which does often struggle to produce the kind of Orgmode I want to have. The package requires =wget= but does not rely on Pandoc.
+This package is still in a very early stage. I use it to replace =orgrr-save-website=, which uses =org-web-tools--eww-readable= and =org-web-tools--html-to-org-with-pandoc= and becomes more fragile by the day. It also often does struggle to produce the kind of Orgmode I want to have. The package requires =wget= but does not rely on Pandoc.
 
-** Design choices (what you get)
+** Minimal Orgmode
 
 website2org ignores all information before the first =<h1>= headline and everything coming after the =<footer>=. All data on images, source, =<div>= and similar types of tags are also ignored. It respects all paragraphs, headlines, lists, block quotes, =<pre>= (line breaks are still an issue here), links, =<strong>=, and =<em>=. Tabs and spaces are reduced to one space. A new line cannot start with a space (or "- " followed by nothing).
 
