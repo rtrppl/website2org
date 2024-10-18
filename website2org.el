@@ -41,8 +41,8 @@
 
 
 (defun website2org ()
-  "Use the URL at point or an entered URL and initiates 
-website2org-url-to-org. Creates a org-file in website2org-directory."
+  "Use the URL at point or an entered URL and initiate 
+website2org-url-to-org. Creates an org-file in website2org-directory."
   (interactive)
   (let ((url (or 
               (thing-at-point-url-at-point)
@@ -51,8 +51,8 @@ website2org-url-to-org. Creates a org-file in website2org-directory."
     (website2org-url-to-org url)))
 
 (defun website2org-temp ()
-  "Use the URL at point or an entered URL and initiates 
-website2org-url-to-org. Result will be presented in a buffer."
+  "Use the URL at point or an entered URL and initiate 
+website2org-url-to-org. Results will be presented in a buffer."
   (interactive)
   (let ((url (or 
               (thing-at-point-url-at-point)
