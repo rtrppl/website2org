@@ -4,7 +4,7 @@
 
 ;; Maintainer: René Trappel <rtrappel@gmail.com>
 ;; URL:
-;; Version: 0.1
+;; Version: 0.1.1
 ;; Package-Requires: emacs "26" (maybe earlier), wget
 ;; Keywords: html websites orgmode
 
@@ -28,6 +28,8 @@
 ;; website2org.el allows to turn any website into a minimal orgmode
 ;; buffer or .org file.
 
+;; 0.1.1
+;; - Added <ol> and removed <input> and <date>
 
 (defvar website2org-wget-cmd "wget -q -O ")
 (defvar website2org-cache-filename "~/website2org-cache.html")
@@ -36,9 +38,8 @@
 ;; use in orgrr (https://github.com/rtrppl/orgrr).
 (defvar website2org-additional-meta "#+roam_tags: website orgrr-project") 
 
-(defvar website2org-directory org-directory) ;; directories musrt end with / 
+(defvar website2org-directory org-directory) ;; directories must end with / 
 (defvar website2org-filename-time-format "%Y%m%d%H%M%S")
-
 
 (defun website2org ()
   "Use the URL at point or an entered URL and initiate 
@@ -128,7 +129,8 @@ website2org-url-to-org. Results will be presented in a buffer."
 	 (return)
 	 (case)
 	 (title))
-    (setq content (website2org-cleanup-remove-footer content)) 
+    (setq content (website2org-cleanup-remove-footer content))
+    (setq content (website2org-cleanup-remove-header content))
     (with-temp-buffer 
       (insert content)
       (goto-char (point-min))
@@ -138,7 +140,7 @@ website2org-url-to-org. Results will be presented in a buffer."
 		 (replacement (replace-regexp-in-string "</p>" " " replacement)))
             (replace-match replacement t t))))
       (goto-char (point-min))
-      (while (re-search-forward "\\(<p[\s>]\\|<pre[\s>]\\|<blockquote\\|<h1\\|<h2\\|<h3\\|<ul\\|<title\\)\\s-*\\([^\0]+?\\)\\(</p>\\|</pre>\\|</blockquote>\\|</h1>\\|</h2>\\|</h3>\\|</ul>\\|</title>\\)" nil t)
+      (while (re-search-forward "\\(<p[\s>]\\|<pre[\s>]\\|<blockquote\\|<h1\\|<h2\\|<h3\\|<ul\\|<ol\\|<title\\)\\s-*\\([^\0]+?\\)\\(</p>\\|</pre>\\|</blockquote>\\|</h1>\\|</h2>\\|</h3>\\|</ul>\\|</ol>\\|</title>\\)" nil t)
 	(when (match-string 0)
 	  (setq case (match-string 0))
 	  (when (and (or (string-match-p "<h1" case)
@@ -150,13 +152,16 @@ website2org-url-to-org. Results will be presented in a buffer."
 		     (not (string-match-p ".png" case))
 		     (not (string-match-p ".jpg" case)))
 	    (setq processed-content (concat processed-content "\n\n" case "\n\n")))
+	  (when (and (string-match-p "<ol[\s>]" case)
+		     (not (string-match-p ".png" case))
+		     (not (string-match-p ".jpg" case)))
+	    (setq processed-content (concat processed-content "\n\n" case "\n\n")))
 	  (when (string-match-p "<pre[\s>]" case)
 	    (setq processed-content (concat processed-content "\n\n" case "\n\n")))
 	  (when (string-match-p "<blockquote" case)
 	    (setq processed-content (concat processed-content "\n\n" case "\n\n")))
 	  (when (string-match-p "<p[\s>]" case)
 	    (setq processed-content (concat processed-content "\n\n" case "\n\n"))))))
-    (setq processed-content (website2org-cleanup-remove-header processed-content))
     (setq processed-content (website2org-cleanup-html-tags processed-content))
     (setq title (website2org-return-title content))
     (setq processed-content (website2org-html-to-org processed-content))
@@ -217,6 +222,7 @@ website2org-url-to-org. Results will be presented in a buffer."
   (setq content (replace-regexp-in-string "<h2\\([^>]*\\)>" "<h2>" content))
   (setq content (replace-regexp-in-string "<h3\\([^>]*\\)>" "<h3>" content))
   (setq content (replace-regexp-in-string "<ul\\([^>]*\\)>" "<ul>" content))
+  (setq content (replace-regexp-in-string "<ol\\([^>]*\\)>" "<ol>" content))
   (setq content (replace-regexp-in-string "<li\\([^>]*\\)>" "<li>" content))
   (setq content (replace-regexp-in-string "<pre\\([^>]*\\)>" "<pre>" content))
   (setq content (replace-regexp-in-string "<blockquote\\([^>]*\\)>" "<blockquote>" content))
@@ -225,6 +231,10 @@ website2org-url-to-org. Results will be presented in a buffer."
   (setq content (replace-regexp-in-string "<strong\\([^>]*\\)>" "<strong>" content))
   (setq content (replace-regexp-in-string "<span\\([^>]*\\)>" "" content))
   (setq content (replace-regexp-in-string "</span\\([^>]*\\)>" "" content))
+  (setq content (replace-regexp-in-string "<time\\([^>]*\\)>" "" content))
+  (setq content (replace-regexp-in-string "</time\\([^>]*\\)>" "" content))
+  (setq content (replace-regexp-in-string "<input\\([^>]*\\)>" "" content))
+  (setq content (replace-regexp-in-string "</input\\([^>]*\\)>" "" content))
   (setq content (replace-regexp-in-string "<div\\([^>]*\\)>" "" content))
   (setq content (replace-regexp-in-string "</div\\([^>]*\\)>" "" content))
   (setq content (replace-regexp-in-string "<svg\\([^>]*\\)>" "" content))
@@ -278,6 +288,8 @@ Currently this function is not needed/used."
  (setq content (replace-regexp-in-string "</em>" "/ " content))
  (setq content (replace-regexp-in-string "<ul>" "" content))
  (setq content (replace-regexp-in-string "</ul>" "\n" content))
+ (setq content (replace-regexp-in-string "<ol>" "" content))
+ (setq content (replace-regexp-in-string "</ol>" "\n" content))
  (setq content (replace-regexp-in-string "</li>" "</li>\n" content))
  (setq content (replace-regexp-in-string "<li>" "- " content))
  (setq content (replace-regexp-in-string "</li>" "" content))
@@ -319,6 +331,7 @@ Currently this function is not needed/used."
   (setq content (replace-regexp-in-string "&gt;" ">" content))
   (setq content (replace-regexp-in-string "&#8220;" "\"" content))
   (setq content (replace-regexp-in-string "&#8221;" "\"" content))
+  (setq content (replace-regexp-in-string "&bull;" "•" content))
   (setq content (replace-regexp-in-string "[\t\r]+" " " content))
   (setq content (replace-regexp-in-string " " " " content))
   (setq content (replace-regexp-in-string "&#\\(?:8217\\|039\\);" "'" content)))
