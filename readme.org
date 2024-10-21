@@ -19,6 +19,9 @@ website2org ignores all information before the first =<h1>= headline and everyth
 
 ** Change log
 
+*0.1.1*
+- Added <ol> and removed <input> and <time>
+
 *0.1*
 - first public version
 
