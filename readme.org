@@ -11,11 +11,11 @@ I have two primary uses cases for this. 1) Local storage/read it later: I often 
 
 This package is still in a very early stage. I use it to replace =orgrr-save-website=, which draws on =org-web-tools--eww-readable= and =org-web-tools--html-to-org-with-pandoc= but has become more fragile by the day. =orgrr-save-website= also often does struggle to produce the kind of Orgmode I want to have - with as little HTML fragments as possible. 
 
-website2org requires [[https://www.gnu.org/software/wget/][wget]] but does not use [[https://pandoc.org/][Pandoc]]. The package parses HTML to achieve rather minimal looking Orgmode files, see below.
+website2org requires [[https://www.gnu.org/software/wget/][wget]] but does not use [[https://pandoc.org/][Pandoc]]. The package parses HTML via [[https://stackoverflow.com/questions/1732348/regex-match-open-tags-except-xhtml-self-contained-tags][RegExp]] to achieve rather minimal looking Orgmode files, see below.
 
 ** Minimal Orgmode
 
-website2org ignores all information before the first =<h1>= headline and everything coming after the =<footer>=. All data about images, source, =<div>= and similar types of tags are also ignored. It respects all paragraphs, headlines, lists, block quotes, =<pre>= (line breaks are still an issue here), links, =<strong>=, and =<em>=. Tabs and multiple spaces are reduced to one space. A new line cannot start with a space (or "- " followed by nothing).
+website2org ignores all information before the first =<h1>= headline and everything coming after the =<footer>=. All data about images, source, =<div>= and similar types of tags are also ignored. It respects all paragraphs, headlines, lists (ordered and not), inline code, block quotes, =<pre>= (line breaks are still an issue here), links (including local links), =<strong>=, and =<em>=. Tabs and multiple spaces are reduced to one space. A new line cannot start with a space (or "- " followed by nothing).
 
 ** Change log
 
