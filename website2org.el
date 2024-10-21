@@ -4,7 +4,7 @@
 
 ;; Maintainer: René Trappel <rtrappel@gmail.com>
 ;; URL:
-;; Version: 0.1
+;; Version: 0.1.1
 ;; Package-Requires: emacs "26" (maybe earlier), wget
 ;; Keywords: html websites orgmode
 
@@ -28,15 +28,17 @@
 ;; website2org.el allows to turn any website into a minimal orgmode
 ;; buffer or .org file.
 
+;; 0.1.1
+;; - Added <ol> and removed <input> and <time>; many small changes
 
-(defvar website2org-wget-cmd "wget -q -O ")
+(defvar website2org-wget-cmd "wget -q ")
 (defvar website2org-cache-filename "~/website2org-cache.html")
 
 ;; Turn website2org-additional-meta nil if not applicable. This is for
 ;; use in orgrr (https://github.com/rtrppl/orgrr).
 (defvar website2org-additional-meta "#+roam_tags: website orgrr-project") 
 
-(defvar website2org-directory org-directory) ;; directories musrt end with / 
+(defvar website2org-directory org-directory) ;; directories must end with / 
 (defvar website2org-filename-time-format "%Y%m%d%H%M%S")
 
 
@@ -108,7 +110,7 @@ website2org-url-to-org. Results will be presented in a buffer."
 
 (defun website2org-create-local-cache-file (URL)
   "Uses wget to download a website into a local cache file."
-    (shell-command (concat website2org-wget-cmd website2org-cache-filename " \"" URL "\"") nil))
+    (shell-command (concat website2org-wget-cmd "\"" URL "\"" " -O " website2org-cache-filename ) t))
 
 (defun website2org-delete-local-cache-file ()
   "Deletes the website2org local cache file."
@@ -127,6 +129,7 @@ website2org-url-to-org. Results will be presented in a buffer."
   (let* ((processed-content)
 	 (return)
 	 (case)
+	 (error-in-log)
 	 (title))
     (setq content (website2org-cleanup-remove-footer content)) 
     (with-temp-buffer 
@@ -136,9 +139,9 @@ website2org-url-to-org. Results will be presented in a buffer."
 	(when (match-string 0)
 	  (let* ((replacement (replace-regexp-in-string "<p\\s-*[^>]*>" " " (match-string 0)))
 		 (replacement (replace-regexp-in-string "</p>" " " replacement)))
-            (replace-match replacement t t))))
+	    (replace-match replacement t t))))
       (goto-char (point-min))
-      (while (re-search-forward "\\(<p[\s>]\\|<pre[\s>]\\|<blockquote\\|<h1\\|<h2\\|<h3\\|<ul\\|<title\\)\\s-*\\([^\0]+?\\)\\(</p>\\|</pre>\\|</blockquote>\\|</h1>\\|</h2>\\|</h3>\\|</ul>\\|</title>\\)" nil t)
+      (while (re-search-forward "\\(<p[\s>]\\|<pre[\s>]\\|<blockquote\\|<h1\\|<h2\\|<h3\\|<ul\\|<ol\\|<title\\)\\s-*\\([^\0]+?\\)\\(</p>\\|</pre>\\|</blockquote>\\|</h1>\\|</h2>\\|</h3>\\|</ul>\\|</ol>\\|</title>\\)" nil t)
 	(when (match-string 0)
 	  (setq case (match-string 0))
 	  (when (and (or (string-match-p "<h1" case)
@@ -147,6 +150,10 @@ website2org-url-to-org. Results will be presented in a buffer."
 		     (not (string-match-p "<img" case)))
 	    (setq processed-content (concat processed-content "\n\n" case "\n\n")))
 	  (when (and (string-match-p "<ul[\s>]" case)
+		     (not (string-match-p ".png" case))
+		     (not (string-match-p ".jpg" case)))
+	    (setq processed-content (concat processed-content "\n\n" case "\n\n")))
+	  (when (and (string-match-p "<ol[\s>]" case)
 		     (not (string-match-p ".png" case))
 		     (not (string-match-p ".jpg" case)))
 	    (setq processed-content (concat processed-content "\n\n" case "\n\n")))
@@ -166,7 +173,7 @@ website2org-url-to-org. Results will be presented in a buffer."
       (setq return title))
     (when (string-equal what "content")
       (setq return (string-trim processed-content)))
-    return))
+  return))
 
 (defun website2org-cleanup-remove-footer (content)
   "Removes the footer from a HTML document." 
@@ -220,6 +227,11 @@ website2org-url-to-org. Results will be presented in a buffer."
   (setq content (replace-regexp-in-string "<li\\([^>]*\\)>" "<li>" content))
   (setq content (replace-regexp-in-string "<pre\\([^>]*\\)>" "<pre>" content))
   (setq content (replace-regexp-in-string "<blockquote\\([^>]*\\)>" "<blockquote>" content))
+  (setq content (replace-regexp-in-string "<ol\\([^>]*\\)>" "<ol>" content))
+  (setq content (replace-regexp-in-string "<time\\([^>]*\\)>" "" content))
+  (setq content (replace-regexp-in-string "</time\\([^>]*\\)>" "" content))
+  (setq content (replace-regexp-in-string "<input\\([^>]*\\)>" "" content))
+  (setq content (replace-regexp-in-string "</input\\([^>]*\\)>" "" content))
   (setq content (replace-regexp-in-string "<pre>.*<code>" "<pre>" content))
   (setq content (replace-regexp-in-string "</code>.*</pre>" "</pre>" content))
   (setq content (replace-regexp-in-string "<strong\\([^>]*\\)>" "<strong>" content))
@@ -278,6 +290,8 @@ Currently this function is not needed/used."
  (setq content (replace-regexp-in-string "</em>" "/ " content))
  (setq content (replace-regexp-in-string "<ul>" "" content))
  (setq content (replace-regexp-in-string "</ul>" "\n" content))
+ (setq content (replace-regexp-in-string "<ol>" "" content))
+ (setq content (replace-regexp-in-string "</ol>" "\n" content))
  (setq content (replace-regexp-in-string "</li>" "</li>\n" content))
  (setq content (replace-regexp-in-string "<li>" "- " content))
  (setq content (replace-regexp-in-string "</li>" "" content))
@@ -320,6 +334,7 @@ Currently this function is not needed/used."
   (setq content (replace-regexp-in-string "&#8220;" "\"" content))
   (setq content (replace-regexp-in-string "&#8221;" "\"" content))
   (setq content (replace-regexp-in-string "[\t\r]+" " " content))
+  (setq content (replace-regexp-in-string "&bull;" "•" content))
   (setq content (replace-regexp-in-string " " " " content))
   (setq content (replace-regexp-in-string "&#\\(?:8217\\|039\\);" "'" content)))
 
@@ -346,8 +361,9 @@ Currently this function is not needed/used."
 	    (delete-region (line-beginning-position) (line-end-position)))
 	  (forward-line)))	     
       (setq content (buffer-substring-no-properties (point-min)(point-max))))
-;; no empty lines that just start with - 
-    (setq content (replace-regexp-in-string "^- $" "" content))
+;; proper punctuation  
+    (setq content (replace-regexp-in-string "/\s\\([,;.:!?)]\\)" "/\\1" content)) 
+    (setq content (replace-regexp-in-string "\\([(]\\)\s/" "\\1/" content))
 ;; no empty lines that just start with \  
     (setq content (replace-regexp-in-string "[\\]*$" "" content)) 
 ;; no empty lines that just start with * 
@@ -356,10 +372,12 @@ Currently this function is not needed/used."
     (setq content (replace-regexp-in-string "* $" "" content))
 ;; no new line starts with a space
     (setq content (replace-regexp-in-string "^\s*" "" content)) 
-;; no more than one empty line
-    (setq content (replace-regexp-in-string "\n\\{2,\\}" "\n\n" content))
 ;; no more than one space 
-    (setq content (replace-regexp-in-string "\s\\{2,\\}" "\s" content))) 
+    (setq content (replace-regexp-in-string "\s\\{2,\\}" "\s" content))
+;; no empty lines that just start with - 
+    (setq content (replace-regexp-in-string "^- $\\|^-$" "" content))
+;; no more than one empty line
+    (setq content (replace-regexp-in-string "\n\\{2,\\}" "\n\n" content)))
 
 
 (provide 'website2org)
