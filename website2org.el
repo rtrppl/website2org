@@ -5,7 +5,7 @@
 ;; Maintainer: René Trappel <rtrappel@gmail.com>
 ;; URL:
 ;; Version: 0.1.1
-;; Package-Requires: emacs "26" (maybe earlier), wget
+;; Package-Requires: ((emacs "26"))
 ;; Keywords: html websites orgmode
 
 ;; This file is not part of GNU Emacs.
