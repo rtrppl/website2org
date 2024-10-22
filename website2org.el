@@ -1,4 +1,4 @@
-;;; website2org.el --- Convert website into Org Files -*- lexical-binding: t -*-
+;;; website2org.el --- Turn any website into a minimal orgmode buffer or .org file -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2024 Free Software Foundation, Inc.
 
@@ -69,6 +69,7 @@ Results will be presented in a buffer."
 
 (defun website2org-url-to-org (url)
   "Creates an Orgmode document from a URL."
+ (with-temp-buffer
   (website2org-create-local-cache-file url)
   (let* ((content (website2org-load-file website2org-cache-filename))
 	 (title (website2org-process-html content "title"))
@@ -84,24 +85,24 @@ Results will be presented in a buffer."
       (insert (concat website2org-additional-meta "\n")))
     (insert (concat "#+roam_key: " url "\n\n"))
     (insert org-content)
-    (goto-char (point-min))))
+    (goto-char (point-min)))))
 
 (defun website2org-to-buffer (URL)
-  "Returns the text from a html-file."
-  (interactive)
-  (website2org-create-local-cache-file URL)
-  (let* ((content (website2org-load-file website2org-cache-filename))
-	 (title (website2org-process-html content "title"))
-	 (org-content (website2org-process-html content "content"))
-	 (final))
-    (website2org-delete-local-cache-file)
+  "Creates an Orgmode buffer from an URL."
+  (with-temp-buffer
+    (website2org-create-local-cache-file URL)
+    (let* ((content (website2org-load-file website2org-cache-filename))
+	   (title (website2org-process-html content "title"))
+	   (org-content (website2org-process-html content "content"))
+	   (final))
+      (website2org-delete-local-cache-file)
     (setq final (concat "#+roam_key: " URL "\n\n" org-content))
     (setq final (concat "#+title: " title "\n" final))
     (with-current-buffer (get-buffer-create "website2org")
       (erase-buffer)
       (switch-to-buffer "website2org")
       (insert final)))
-  (website2org-prepare-findings-buffer "website2org"))
+  (website2org-prepare-findings-buffer "website2org")))
 
 (defun website2org-prepare-findings-buffer (buffer)
   "Preparing the orgrr findings BUFFER."
@@ -383,7 +384,6 @@ Currently this function is not needed/used."
   (setq content (replace-regexp-in-string "^- $\\|^-$" "" content))
   ;; no more than one empty line
   (setq content (replace-regexp-in-string "\n\\{2,\\}" "\n\n" content)))
-
 
 (provide 'website2org)
 ;;; website2org.el ends here
