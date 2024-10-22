@@ -1,12 +1,12 @@
-;; website2org.el --- -*- lexical-binding: t -*-
+;;; website2org.el --- Turn any website into a minimal orgmode buffer or .org file -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2024 Free Software Foundation, Inc.
 
 ;; Maintainer: René Trappel <rtrappel@gmail.com>
-;; URL:
+;; URL: https://github.com/rtrppl/website2org
 ;; Version: 0.1.1
 ;; Package-Requires: ((emacs "26"))
-;; Keywords: html websites orgmode
+;; Keywords: comm
 
 ;; This file is not part of GNU Emacs.
 
@@ -30,6 +30,8 @@
 
 ;; 0.1.1
 ;; - Added <ol> and removed <input> and <time>; many small changes
+
+;;; Code:
 
 (defvar website2org-wget-cmd "wget -q ")
 (defvar website2org-cache-filename "~/website2org-cache.html")
@@ -379,5 +381,6 @@ Currently this function is not needed/used."
 ;; no more than one empty line
     (setq content (replace-regexp-in-string "\n\\{2,\\}" "\n\n" content)))
 
-
 (provide 'website2org)
+
+;;; website2org.el ends here
