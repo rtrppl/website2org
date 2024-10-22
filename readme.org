@@ -17,6 +17,13 @@ website2org requires [[https://www.gnu.org/software/wget/][wget]] but does not u
 
 website2org ignores all information before the first =<h1>= headline and everything coming after the =<footer>=. All data about images, source, =<div>= and similar types of tags are also ignored. It respects all paragraphs, headlines, lists (ordered and not), inline code, block quotes, =<pre>= (line breaks are still an issue here), links (including local links), =<strong>=, and =<em>=. Tabs and multiple spaces are reduced to one space. A new line cannot start with a space (or "- " followed by nothing).
 
+** Known issues
+
+Parsing HTML with RegEx comes with lot's of issues. Most experienced coders for good reason strongly advice against doing so. For transforming a website into Orgmode, especially for most modern blog content, these 
+
+Orgmode does not deal well with source blocks within quote blocks. Source blocks without 
+
+
 ** Change log
 
 *0.1.1*
