@@ -33,6 +33,9 @@
 
 ;;; Code:
 
+(require 'org)
+
+
 (defvar website2org-wget-cmd "wget -q ")
 (defvar website2org-cache-filename "~/website2org-cache.html")
 
@@ -124,6 +127,7 @@ website2org-url-to-org. Results will be presented in a buffer."
   (let ((content))
     (with-temp-buffer
       (insert-file-contents filename)
+      (libxml-parse-html-region (point-min)(point-max))
       (setq content (buffer-substring-no-properties (point-min)(point-max))))
     content))
 
@@ -141,10 +145,12 @@ website2org-url-to-org. Results will be presented in a buffer."
       (while (re-search-forward "\\(<blockquote\\)\\s-*\\([^\0]+?\\)\\(</blockquote>\\)" nil t)
 	(when (match-string 0)
 	  (let* ((replacement (replace-regexp-in-string "<p\\s-*[^>]*>" " " (match-string 0)))
-		 (replacement (replace-regexp-in-string "</p>" " " replacement)))
+		 (replacement (replace-regexp-in-string "</p>" " " replacement))
+		 (replacement (replace-regexp-in-string "<pre\\s-*[^>]*>" "\n\n#+BEGIN_SRC\n" replacement))
+		 (replacement (replace-regexp-in-string "</pre>" "\n#+END_SRC\n\n" replacement)))
 	    (replace-match replacement t t))))
       (goto-char (point-min))
-      (while (re-search-forward "\\(<p[\s>]\\|<pre[\s>]\\|<blockquote\\|<h1\\|<h2\\|<h3\\|<ul\\|<ol\\|<title\\)\\s-*\\([^\0]+?\\)\\(</p>\\|</pre>\\|</blockquote>\\|</h1>\\|</h2>\\|</h3>\\|</ul>\\|</ol>\\|</title>\\)" nil t)
+      (while (re-search-forward "\\(<p[\s>]\\|<blockquote\\|<pre[\s>]\\|<h1\\|<h2\\|<h3\\|<ul\\|<ol\\|<title\\)\\s-*\\([^\0]+?\\)\\(</p>\\|</blockquote>\\|</pre>\\|</h1>\\|</h2>\\|</h3>\\|</ul>\\|</ol>\\|</title>\\)" nil t)
 	(when (match-string 0)
 	  (setq case (match-string 0))
 	  (when (and (or (string-match-p "<h1" case)
@@ -160,9 +166,9 @@ website2org-url-to-org. Results will be presented in a buffer."
 		     (not (string-match-p ".png" case))
 		     (not (string-match-p ".jpg" case)))
 	    (setq processed-content (concat processed-content "\n\n" case "\n\n")))
-	  (when (string-match-p "<pre[\s>]" case)
-	    (setq processed-content (concat processed-content "\n\n" case "\n\n")))
 	  (when (string-match-p "<blockquote" case)
+	    (setq processed-content (concat processed-content "\n\n" case "\n\n")))
+	  (when (string-match-p "<pre[\s>]" case)
 	    (setq processed-content (concat processed-content "\n\n" case "\n\n")))
 	  (when (string-match-p "<p[\s>]" case)
 	    (setq processed-content (concat processed-content "\n\n" case "\n\n"))))))
@@ -218,7 +224,7 @@ website2org-url-to-org. Results will be presented in a buffer."
 
 (defun website2org-cleanup-html-tags (content)
   "Minimalizing HTML tags."
-  (setq content (replace-regexp-in-string "<p\s\\([^>]*\\)>" "<p>" content))
+  (setq content (replace-regexp-in-string "<p\\s-\\([^>]*\\)>" "<p>" content))
   (setq content (replace-regexp-in-string "<em\s\\([^>]*\\)>" "<em>" content))
   (setq content (replace-regexp-in-string "<i\s\\([^>]*\\)>" "<i>" content))
   (setq content (replace-regexp-in-string "<img\s\\([^>]*\\)>" "" content))
@@ -229,7 +235,10 @@ website2org-url-to-org. Results will be presented in a buffer."
   (setq content (replace-regexp-in-string "<ul\\([^>]*\\)>" "<ul>" content))
   (setq content (replace-regexp-in-string "<li\\([^>]*\\)>" "<li>" content))
   (setq content (replace-regexp-in-string "<pre\\([^>]*\\)>" "<pre>" content))
-  (setq content (replace-regexp-in-string "<blockquote\\([^>]*\\)>" "<blockquote>" content))
+  (setq content (replace-regexp-in-string "<blockquote>" "#+BEGIN_QUOTE\n" content))
+  (setq content (replace-regexp-in-string "</blockquote>" "#+END_QUOTE" content))
+  (setq content (replace-regexp-in-string "<pre>" "#+BEGIN_SRC\n" content))
+  (setq content (replace-regexp-in-string "</pre>" "\n#+END_SRC" content))
   (setq content (replace-regexp-in-string "<ol\\([^>]*\\)>" "<ol>" content))
   (setq content (replace-regexp-in-string "<time\\([^>]*\\)>" "" content))
   (setq content (replace-regexp-in-string "</time\\([^>]*\\)>" "" content))
@@ -324,6 +333,14 @@ Currently this function is not needed/used."
       (goto-char (point-min))
       (while (re-search-forward "\\*\\*\\]" nil t)
 	  (replace-match "\]" t t))
+      (goto-char (point-min))
+      (while (re-search-forward "\\(#+BEGIN_SRC\\)\\s-*\\([^\0]+?\\)\\(#+END_SRC\\)" nil t)
+	(when (match-string 0)
+	  (let* ((begin-tag (match-string 1))
+		 (content (match-string 2))
+		 (end-tag (match-string 3))
+		 (processed-content (split-string content "\n")))
+	    (replace-match (concat begin-tag processed-content end-tag) on t t))))  
       (buffer-substring-no-properties (point-min) (point-max))))
 
 (defun website2org-cleanup-org-weird-characters (content)
