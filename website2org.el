@@ -122,7 +122,8 @@ website2org-url-to-org. Results will be presented in a buffer."
     (with-temp-buffer
 ;      (insert (shell-command-to-string (concat "hxclean " filename))) 
 ;      (insert (shell-command-to-string (concat "htmlq -f " filename))) 
-      (insert-file-contents filename)      
+      (insert-file-contents filename)
+      (libxml-parse-html-region (point-min)(point-max))
       (setq content (buffer-substring-no-properties (point-min)(point-max))))
     content))
 
