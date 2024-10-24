@@ -4,7 +4,7 @@
 
 ;; Maintainer: René Trappel <rtrappel@gmail.com>
 ;; URL: https://github.com/rtrppl/website2org
-;; Version: 0.1.1
+;; Version: 0.1.2
 ;; Package-Requires: ((emacs "26"))
 ;; Keywords: comm
 
@@ -27,7 +27,10 @@
 
 ;; website2org.el allows to turn any website into a minimal orgmode
 ;; buffer or .org file.
-
+;; 
+;; 0.1.2
+;; - Further improvements to parsing
+;; 
 ;; 0.1.1
 ;; - Added <ol> and removed <input> and <time>; many small changes
 
@@ -116,7 +119,8 @@ website2org-url-to-org. Results will be presented in a buffer."
 
 (defun website2org-create-local-cache-file (URL)
   "Uses wget to download a website into a local cache file."
-    (shell-command (concat website2org-wget-cmd "\"" URL "\"" " -O " website2org-cache-filename ) t))
+  (shell-command (concat website2org-wget-cmd "\"" URL "\"" " -O " website2org-cache-filename) t))
+
 
 (defun website2org-delete-local-cache-file ()
   "Deletes the website2org local cache file."
@@ -127,7 +131,6 @@ website2org-url-to-org. Results will be presented in a buffer."
   (let ((content))
     (with-temp-buffer
       (insert-file-contents filename)
-      (libxml-parse-html-region (point-min)(point-max))
       (setq content (buffer-substring-no-properties (point-min)(point-max))))
     content))
 
@@ -144,7 +147,7 @@ website2org-url-to-org. Results will be presented in a buffer."
       (goto-char (point-min))
       (while (re-search-forward "\\(<blockquote\\)\\s-*\\([^\0]+?\\)\\(</blockquote>\\)" nil t)
 	(when (match-string 0)
-	  (let* ((replacement (replace-regexp-in-string "<p\\s-*[^>]*>" " " (match-string 0)))
+	  (let* ((replacement (replace-regexp-in-string "<p[\s>]*>" " " (match-string 0)))
 		 (replacement (replace-regexp-in-string "</p>" " " replacement))
 		 (replacement (replace-regexp-in-string "<pre\\s-*[^>]*>" "\n\n#+BEGIN_SRC\n" replacement))
 		 (replacement (replace-regexp-in-string "</pre>" "\n#+END_SRC\n\n" replacement)))
@@ -235,8 +238,8 @@ website2org-url-to-org. Results will be presented in a buffer."
   (setq content (replace-regexp-in-string "<ul\\([^>]*\\)>" "<ul>" content))
   (setq content (replace-regexp-in-string "<li\\([^>]*\\)>" "<li>" content))
   (setq content (replace-regexp-in-string "<pre\\([^>]*\\)>" "<pre>" content))
-  (setq content (replace-regexp-in-string "<blockquote>" "#+BEGIN_QUOTE\n" content))
-  (setq content (replace-regexp-in-string "</blockquote>" "#+END_QUOTE" content))
+  (setq content (replace-regexp-in-string "<blockquote\\s-\\([^>]*\\)>" "\n#+BEGIN_QUOTE\n" content))
+  (setq content (replace-regexp-in-string "</blockquote>" "\n#+END_QUOTE\n" content))
   (setq content (replace-regexp-in-string "<pre>" "#+BEGIN_SRC\n" content))
   (setq content (replace-regexp-in-string "</pre>" "\n#+END_SRC" content))
   (setq content (replace-regexp-in-string "<ol\\([^>]*\\)>" "<ol>" content))
@@ -291,7 +294,7 @@ Currently this function is not needed/used."
  (setq content (replace-regexp-in-string "<h3>" "*** " content))
  (setq content (replace-regexp-in-string "</h3>" "" content))
  (setq content (replace-regexp-in-string "<p>" "" content))
- (setq content (replace-regexp-in-string "</p>" "" content))
+ (setq content (replace-regexp-in-string "</p>" "\n" content))
  (setq content (replace-regexp-in-string "<strong>" "**" content))
  (setq content (replace-regexp-in-string "</strong>" "**" content))
  (setq content (replace-regexp-in-string "<b>" "" content))
@@ -305,6 +308,7 @@ Currently this function is not needed/used."
  (setq content (replace-regexp-in-string "<ol>" "" content))
  (setq content (replace-regexp-in-string "</ol>" "\n" content))
  (setq content (replace-regexp-in-string "</li>" "</li>\n" content))
+ (setq content (replace-regexp-in-string "\\([^\n]\\)\\(<li>\\)" "\\1\n- " content))
  (setq content (replace-regexp-in-string "<li>" "- " content))
  (setq content (replace-regexp-in-string "</li>" "" content))
  (setq content (replace-regexp-in-string "<code>" "=" content))
@@ -314,6 +318,7 @@ Currently this function is not needed/used."
  (setq content (replace-regexp-in-string "<blockquote>" "#+BEGIN_QUOTE\n" content))
  (setq content (replace-regexp-in-string "</blockquote>" "\n#+END_QUOTE" content))
  (setq content (replace-regexp-in-string "<br>" "\n" content))
+ (setq content (replace-regexp-in-string "<br />" "\n" content))
  ;; transforming links
  (with-temp-buffer 
       (insert content)
@@ -340,7 +345,15 @@ Currently this function is not needed/used."
 		 (content (match-string 2))
 		 (end-tag (match-string 3))
 		 (processed-content (split-string content "\n")))
-	    (replace-match (concat begin-tag processed-content end-tag) on t t))))  
+	    (replace-match (concat begin-tag processed-content end-tag) on t t))))
+      (goto-char (point-min))
+      (while (re-search-forward "\\(^- \\)\\s-*\\([^\0]+?\\)\\(#+END_SRC\\)" nil t)
+	(when (match-string 0)
+	  (let* ((begin-tag (match-string 1))
+		 (content (match-string 2))
+		 (end-tag (match-string 3))
+		 (processed-content (split-string content "\n")))
+	    (replace-match (concat begin-tag processed-content end-tag) on t t))))
       (buffer-substring-no-properties (point-min) (point-max))))
 
 (defun website2org-cleanup-org-weird-characters (content)
@@ -349,8 +362,10 @@ Currently this function is not needed/used."
   (setq content (replace-regexp-in-string "&ldquo;" "\"" content))
   (setq content (replace-regexp-in-string "&rdquo;" "\"" content))
   (setq content (replace-regexp-in-string "&rsquo;" "'" content))
+  (setq content (replace-regexp-in-string "&#39;" "'" content))
   (setq content (replace-regexp-in-string "&nbsp;" " " content))
   (setq content (replace-regexp-in-string "&gt;" ">" content))
+  (setq content (replace-regexp-in-string "&lt;" "<" content))
   (setq content (replace-regexp-in-string "&#8220;" "\"" content))
   (setq content (replace-regexp-in-string "&#8221;" "\"" content))
   (setq content (replace-regexp-in-string "[\t\r]+" " " content))
