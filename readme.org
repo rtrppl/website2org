@@ -74,8 +74,11 @@ Additionally you can set these values:
 ;; Turn website2org-additional-meta nil if not applicable. This is for
 ;; use in orgrr (https://github.com/rtrppl/orgrr).
 (setq website2org-additional-meta "#+roam_tags: website orgrr-project") 
-
-(defvar website2org-filename-time-format "%Y%m%d%H%M%S")
+;; By default all websites will be Stored in the org-directory.
+;; Set website2org-directory, if you prefer a different directory.
+;; directories must end with /
+(setq website2org-directory "/path/to/where/websites/should/be/stored/") 
+(setq website2org-filename-time-format "%Y%m%d%H%M%S")
 #+end_src
 
 
