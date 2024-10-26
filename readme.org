@@ -58,6 +58,8 @@ Or, if you use straight:
 #+begin_src elisp
 (use-package website2org
   :straight (:host github :repo "rtrppl/website2org")
+  :config
+  (setq website2org-directory "/path/to/where/websites/should/be/stored/") ;; if needed, see below
   :bind
   (:map global-map)
   ("C-M-s-<down>" . website2org)
@@ -74,7 +76,7 @@ Additionally you can set these values:
 ;; Turn website2org-additional-meta nil if not applicable. This is for
 ;; use in orgrr (https://github.com/rtrppl/orgrr).
 (setq website2org-additional-meta "#+roam_tags: website orgrr-project") 
-;; By default all websites will be Stored in the org-directory.
+;; By default all websites will be stored in the org-directory.
 ;; Set website2org-directory, if you prefer a different directory.
 ;; directories must end with /
 (setq website2org-directory "/path/to/where/websites/should/be/stored/") 
@@ -86,5 +88,5 @@ Additionally you can set these values:
 
 These are the primary functions of website2org.el:
 
-=website2org= will download the website at point (or from a provided URL) and save it as a Orgmode file. =website2org-temp= will download a website at point (or from a provided URL) and present it as a temporary Orgmode buffer.
+=website2org= will download the website at point (or from a provided URL) and save it as an Orgmode file. =website2org-temp= will download a website at point (or from a provided URL) and present it as a temporary Orgmode buffer.
 
