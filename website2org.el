@@ -266,7 +266,8 @@ website2org-url-to-org. Results will be presented in a buffer."
 
 (defun website2org-cleanup-remove-header (content)
   "Removes everything before the first H1 headline."
-  (with-temp-buffer 
+  (let ((h1-p))
+    (with-temp-buffer 
     (insert content)
     (goto-char (point-min))
     (when (string-match-p "<h1" content)
@@ -277,7 +278,7 @@ website2org-url-to-org. Results will be presented in a buffer."
 	  (when (not h1-p)
 	    (delete-region (line-beginning-position) (line-end-position)))
 	(forward-line))))
-      (setq content (buffer-substring-no-properties (point-min)(point-max)))))	
+      (setq content (buffer-substring-no-properties (point-min)(point-max))))))	
 
 (defun website2org-html-to-org-via-pandoc (content)
   "Turns the filtered HTML content into clean Orgmode content.
