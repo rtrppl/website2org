@@ -4,7 +4,7 @@
 
 ;; Maintainer: René Trappel <rtrappel@gmail.com>
 ;; URL: https://github.com/rtrppl/website2org
-;; Version: 0.1.2
+;; Version: 0.1.3
 ;; Package-Requires: ((emacs "26"))
 ;; Keywords: comm
 
@@ -28,6 +28,9 @@
 ;; website2org.el allows to turn any website into a minimal orgmode
 ;; buffer or .org file.
 ;; 
+;; 0.1.3
+;; - bug fixes for the case when there is no <h1> tag; more parsing  
+;;
 ;; 0.1.2
 ;; - Further improvements to parsing
 ;; 
@@ -37,7 +40,6 @@
 ;;; Code:
 
 (require 'org)
-
 
 (defvar website2org-wget-cmd "wget -q ")
 (defvar website2org-cache-filename "~/website2org-cache.html")
@@ -264,18 +266,18 @@ website2org-url-to-org. Results will be presented in a buffer."
 
 (defun website2org-cleanup-remove-header (content)
   "Removes everything before the first H1 headline."
-    (with-temp-buffer 
-      (insert content)
-      (goto-char (point-min))
-      (let ((h1-p))
+  (with-temp-buffer 
+    (insert content)
+    (goto-char (point-min))
+    (when (string-match-p "<h1" content)
       (while (not (eobp))
 	(let ((line (thing-at-point 'line t)))
 	  (when (string-match-p "<h1.*?>" line)
 	    (setq h1-p t))
 	  (when (not h1-p)
 	    (delete-region (line-beginning-position) (line-end-position)))
-	(forward-line)))
-      (setq content (buffer-substring-no-properties (point-min)(point-max))))))	
+	(forward-line))))
+      (setq content (buffer-substring-no-properties (point-min)(point-max)))))	
 
 (defun website2org-html-to-org-via-pandoc (content)
   "Turns the filtered HTML content into clean Orgmode content.
@@ -371,6 +373,7 @@ Currently this function is not needed/used."
   (setq content (replace-regexp-in-string "[\t\r]+" " " content))
   (setq content (replace-regexp-in-string "&bull;" "•" content))
   (setq content (replace-regexp-in-string " " " " content))
+  (setq content (replace-regexp-in-string "&amp;" "&" content))
   (setq content (replace-regexp-in-string "&#\\(?:8217\\|039\\);" "'" content)))
 
 (defun website2org-cleanup-org (content)
@@ -387,6 +390,8 @@ Currently this function is not needed/used."
 	  (when (string-match-p "\\[\\[data:image" line)
 	    (delete-region (line-beginning-position) (line-end-position)))
 	  (when (string-match-p "\s*<source" line)
+	    (delete-region (line-beginning-position) (line-end-position)))
+	  (when (string-match-p "\s*<style" line)
 	    (delete-region (line-beginning-position) (line-end-position)))
 	  (when (string-match-p "\s*<a\s" line)
 	    (delete-region (line-beginning-position) (line-end-position)))
