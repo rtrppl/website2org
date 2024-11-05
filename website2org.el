@@ -40,6 +40,7 @@
 ;;; Code:
 
 (require 'org)
+(require 'shr)
 
 (defvar website2org-wget-cmd "wget -q ")
 (defvar website2org-cache-filename "~/website2org-cache.html")
@@ -126,10 +127,10 @@ website2org-url-to-org. Results will be presented in a buffer."
   "Uses wget to download a website into a local cache file."
   (let ((wget-url))
     (if website2org-clearthispage-normalize
-	(progn
-	  (dolist (url-check website2org-clearthispage-positive-list)
-	    (when (string-match-p (regexp-quote url-check) URL)
-	      (setq wget-url (concat "https://clearthis.page/?u=" URL)))))
+;	(progn
+;	  (dolist (url-check website2org-clearthispage-positive-list)
+;	    (when (string-match-p (regexp-quote url-check) URL)
+	      (setq wget-url (concat "https://clearthis.page/?u=" URL))
       (setq wget-url URL))
   (shell-command (concat website2org-wget-cmd "\"" wget-url "\"" " -O " website2org-cache-filename) t)))
 
@@ -193,6 +194,11 @@ website2org-url-to-org. Results will be presented in a buffer."
     (setq processed-content (website2org-html-to-org processed-content))
     (setq processed-content (website2org-cleanup-org-weird-characters processed-content))
     (setq processed-content (website2org-cleanup-org processed-content))
+    (when website2org-clearthispage-normalize
+      (with-temp-buffer
+	(insert processed-content)
+	(shr-render-region (point-min) (point-max))
+	(setq processed-content (buffer-substring-no-properties (point-min)(point-max)))))
     (when (string-equal what "title")
       (setq return title))
     (when (string-equal what "content")
