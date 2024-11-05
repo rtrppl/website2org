@@ -51,6 +51,9 @@
 (defvar website2org-directory org-directory) ;; directories must end with / 
 (defvar website2org-filename-time-format "%Y%m%d%H%M%S")
 
+(defvar website2org-clearthispage-normalize t)
+(defvar website2org-clearthispage-positive-list (list "github.com"))
+
 
 (defun website2org ()
   "Use the URL at point or an entered URL and initiate 
@@ -121,7 +124,14 @@ website2org-url-to-org. Results will be presented in a buffer."
 
 (defun website2org-create-local-cache-file (URL)
   "Uses wget to download a website into a local cache file."
-  (shell-command (concat website2org-wget-cmd "\"" URL "\"" " -O " website2org-cache-filename) t))
+  (let ((wget-url))
+    (if website2org-clearthispage-normalize
+	(progn
+	  (dolist (url-check website2org-clearthispage-positive-list)
+	    (when (string-match-p (regexp-quote url-check) URL)
+	      (setq wget-url (concat "https://clearthis.page/?u=" URL)))))
+      (setq wget-url URL))
+  (shell-command (concat website2org-wget-cmd "\"" wget-url "\"" " -O " website2org-cache-filename) t)))
 
 
 (defun website2org-delete-local-cache-file ()
