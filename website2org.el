@@ -4,7 +4,7 @@
 
 ;; Maintainer: René Trappel <rtrappel@gmail.com>
 ;; URL: https://github.com/rtrppl/website2org
-;; Version: 0.1.3
+;; Version: 0.1.4
 ;; Package-Requires: ((emacs "26"))
 ;; Keywords: comm
 
@@ -28,6 +28,10 @@
 ;; website2org.el allows to turn any website into a minimal orgmode
 ;; buffer or .org file.
 ;; 
+;; 0.1.4
+;; - several small fixes; several links in one line are now correctly
+;; dealt with
+;;
 ;; 0.1.3
 ;; - bug fixes for the case when there is no <h1> tag; more parsing  
 ;;
@@ -46,7 +50,7 @@
 
 ;; Turn website2org-additional-meta nil if not applicable. This is for
 ;; use in orgrr (https://github.com/rtrppl/orgrr).
-(defvar website2org-additional-meta "#+roam_tags: website orgrr-project") 
+(defvar website2org-additional-meta "#+roam_tags: website") 
 
 (defvar website2org-directory org-directory) ;; directories must end with / 
 (defvar website2org-filename-time-format "%Y%m%d%H%M%S")
@@ -304,6 +308,8 @@ Currently this function is not needed/used."
  (setq content (replace-regexp-in-string "</b>" "" content))
  (setq content (replace-regexp-in-string "<i>" "" content))
  (setq content (replace-regexp-in-string "</i>" "" content))
+ (setq content (replace-regexp-in-string "<kbd>" "~" content))
+ (setq content (replace-regexp-in-string "</kbd>" "~" content))
  (setq content (replace-regexp-in-string "<em>" " /" content))
  (setq content (replace-regexp-in-string "</em>" "/ " content))
  (setq content (replace-regexp-in-string "<ul>" "" content))
@@ -326,7 +332,7 @@ Currently this function is not needed/used."
  (with-temp-buffer 
       (insert content)
       (goto-char (point-min))
-      (while (re-search-forward "<a[\s\t].*+href=['\"]\\([^'\"]+\\)['\"][^>]*>\\([^<]+\\)</a>" nil t)
+      (while (re-search-forward "<a[\s\t].*?href=['\"]\\([^'\"]+\\)['\"][^>]*>\\([^<]+\\)</a>" nil t)
 	(let ((url (match-string 1))
 	      (text (match-string 2)))
 	  (setq url (replace-regexp-in-string "^#" "*" url))
@@ -362,6 +368,7 @@ Currently this function is not needed/used."
 (defun website2org-cleanup-org-weird-characters (content)
   "Cleaning-up weird characters in the Orgmode content."
   (setq content (replace-regexp-in-string "&quot;" "\"" content))
+  (setq content (replace-regexp-in-string "&mldr;" "..." content))
   (setq content (replace-regexp-in-string "&ldquo;" "\"" content))
   (setq content (replace-regexp-in-string "&rdquo;" "\"" content))
   (setq content (replace-regexp-in-string "&rsquo;" "'" content))
