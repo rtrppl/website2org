@@ -372,6 +372,7 @@ Currently this function is not needed/used."
   (setq content (replace-regexp-in-string "&ldquo;" "\"" content))
   (setq content (replace-regexp-in-string "&rdquo;" "\"" content))
   (setq content (replace-regexp-in-string "&rsquo;" "'" content))
+  (setq content (replace-regexp-in-string "&#x27;" "'" content))
   (setq content (replace-regexp-in-string "&#39;" "'" content))
   (setq content (replace-regexp-in-string "&nbsp;" " " content))
   (setq content (replace-regexp-in-string "&gt;" ">" content))
