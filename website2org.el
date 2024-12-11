@@ -4,7 +4,7 @@
 
 ;; Maintainer: René Trappel <rtrappel@gmail.com>
 ;; URL: https://github.com/rtrppl/website2org
-;; Version: 0.1.4
+;; Version: 0.2
 ;; Package-Requires: ((emacs "26"))
 ;; Keywords: comm
 
@@ -28,6 +28,9 @@
 ;; website2org.el allows to turn any website into a minimal orgmode
 ;; buffer or .org file.
 ;; 
+;; 0.2.0
+;; - Added option to send downloaded URL to a web archive
+;;
 ;; 0.1.4
 ;; - several small fixes; several links in one line are now correctly
 ;; dealt with
@@ -55,6 +58,8 @@
 (defvar website2org-directory org-directory) ;; directories must end with / 
 (defvar website2org-filename-time-format "%Y%m%d%H%M%S")
 
+(defvar website2org-archive nil)
+(defvar website2org-archive-url "https://archive.today/") 
 
 (defun website2org ()
   "Use the URL at point or an entered URL and initiate 
@@ -86,6 +91,8 @@ website2org-url-to-org. Results will be presented in a buffer."
 	 (time (format-time-string website2org-filename-time-format))
          (filename)
 	 (final))
+    (when website2org-archive
+      (shell-command (concat "open " website2org-archive-url url)))
     (setq filename (concat website2org-directory time "-" (replace-regexp-in-string "[\"':;\s\\\/]" "_" title)))
     (website2org-delete-local-cache-file)
     (find-file (concat filename ".org"))
@@ -381,11 +388,12 @@ Currently this function is not needed/used."
   (setq content (replace-regexp-in-string "&#8222;" "„" content))
   (setq content (replace-regexp-in-string "&#8220;" "“" content))
   (setq content (replace-regexp-in-string "&#8221;" "”" content))
+  (setq content (replace-regexp-in-string "&#8216;" "‘" content))
   (setq content (replace-regexp-in-string "[\t\r]+" " " content))
   (setq content (replace-regexp-in-string "&bull;" "•" content))
   (setq content (replace-regexp-in-string " " " " content))
   (setq content (replace-regexp-in-string "&amp;" "&" content))
-  (setq content (replace-regexp-in-string "&#\\(?:8217\\|039\\);" "'" content)))
+  (setq content (replace-regexp-in-string "&#\\(?:8217\\|039\\);" "’" content)))
 
 (defun website2org-cleanup-org (content)
   "Final clean-up of the Orgmode content."

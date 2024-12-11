@@ -13,6 +13,8 @@ This package is still in a very early stage. I use it to replace =orgrr-save-web
 
 website2org requires [[https://www.gnu.org/software/wget/][wget]] but does not use [[https://pandoc.org/][Pandoc]]. The package parses HTML via [[https://stackoverflow.com/questions/1732348/regex-match-open-tags-except-xhtml-self-contained-tags][RegExp]] to achieve rather minimal looking Orgmode files.
 
+You can automatically forward downloaded websites to an archiving website via =(setq website2org-archive t)=. The standard service here is [[https://archive.today][archive.today]], which can be changed by modifying =website2org-archive-url=. 
+
 ** Minimal Orgmode
 
 website2org ignores all information before the first =<h1>= headline and everything coming after the =<footer>=. All data about images, source, =<div>= and similar types of tags are also ignored. It respects all paragraphs, headlines, lists (ordered and not), inline code, block quotes, =<pre>= (line breaks are still an issue here), links (including local links), =<strong>=, and =<em>=. Tabs and multiple spaces are reduced to one space. A new line cannot start with a space (or "- " followed by nothing).
