@@ -375,6 +375,7 @@ Currently this function is not needed/used."
 (defun website2org-cleanup-org-weird-characters (content)
   "Cleaning-up weird characters in the Orgmode content."
   (setq content (replace-regexp-in-string "&quot;" "\"" content))
+  (setq content (replace-regexp-in-string "&mdash;" "—" content))
   (setq content (replace-regexp-in-string "&mldr;" "..." content))
   (setq content (replace-regexp-in-string "&ldquo;" "\"" content))
   (setq content (replace-regexp-in-string "&rdquo;" "\"" content))

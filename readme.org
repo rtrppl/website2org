@@ -77,8 +77,8 @@ Or, if you use straight:
 Additionally you can set these values:
 
 #+begin_src elisp
-;; If wget should be called with a differnt command.
-(setq website2org-wget-cmd "wget -q -O ") 
+;; If wget should be called with a different command.
+(setq website2org-wget-cmd "wget -q ") 
 ;; Change the name of the local cache file.
 (setq website2org-cache-filename "~/website2org-cache.html") 
 ;; Turn website2org-additional-meta nil if not applicable. This is for
@@ -89,6 +89,8 @@ Additionally you can set these values:
 ;; directories must end with /
 (setq website2org-directory "/path/to/where/websites/should/be/stored/") 
 (setq website2org-filename-time-format "%Y%m%d%H%M%S")
+(setq website2org-archive nil) ;; If this is set to t, the URL called will be send to the archiving URL below
+(setq website2org-archive-url "https://archive.today/") 
 #+end_src
 
 
