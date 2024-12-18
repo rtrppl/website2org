@@ -4,7 +4,7 @@
 
 ;; Maintainer: René Trappel <rtrappel@gmail.com>
 ;; URL: https://github.com/rtrppl/website2org
-;; Version: 0.2
+;; Version: 0.2.1
 ;; Package-Requires: ((emacs "26"))
 ;; Keywords: comm
 
@@ -28,6 +28,9 @@
 ;; website2org.el allows to turn any website into a minimal orgmode
 ;; buffer or .org file.
 ;; 
+;; 0.2.1
+;; - Added support for images
+;;
 ;; 0.2.0
 ;; - Added option to send downloaded URL to a web archive
 ;;
@@ -158,6 +161,11 @@ website2org-url-to-org. Results will be presented in a buffer."
     (with-temp-buffer 
       (insert content)
       (goto-char (point-min))
+      (while (re-search-forward "<img[ \t].*?src=['\"]\\([^'\"]+\\)['\"][^>]*>" nil t)
+	  (let* ((url (match-string 1))
+		 (replacement (concat "<img src=\"" url "\"</img>"))) ;; creating a fake image end-tag here
+	  (replace-match replacement t t)))
+      (goto-char (point-min))
       (while (re-search-forward "\\(<blockquote\\)\\s-*\\([^\0]+?\\)\\(</blockquote>\\)" nil t)
 	(when (match-string 0)
 	  (let* ((replacement (replace-regexp-in-string "<p[\s>]*>" " " (match-string 0)))
@@ -166,7 +174,7 @@ website2org-url-to-org. Results will be presented in a buffer."
 		 (replacement (replace-regexp-in-string "</pre>" "\n#+END_SRC\n\n" replacement)))
 	    (replace-match replacement t t))))
       (goto-char (point-min))
-      (while (re-search-forward "\\(<p[\s>]\\|<blockquote\\|<pre[\s>]\\|<h1\\|<h2\\|<h3\\|<ul\\|<ol\\|<title\\)\\s-*\\([^\0]+?\\)\\(</p>\\|</blockquote>\\|</pre>\\|</h1>\\|</h2>\\|</h3>\\|</ul>\\|</ol>\\|</title>\\)" nil t)
+      (while (re-search-forward "\\(<p[\s>]\\|<blockquote\\|<pre[\s>]\\|<h1\\|<h2\\|<h3\\|<ul\\|<ol\\|<title\\|<img\\)\\s-*\\([^\0]+?\\)\\(</p>\\|</blockquote>\\|</pre>\\|</h1>\\|</h2>\\|</h3>\\|</ul>\\|</ol>\\|</title>\\|</img>\\)" nil t)
 	(when (match-string 0)
 	  (setq case (match-string 0))
 	  (when (and (or (string-match-p "<h1" case)
@@ -185,6 +193,8 @@ website2org-url-to-org. Results will be presented in a buffer."
 	  (when (string-match-p "<blockquote" case)
 	    (setq processed-content (concat processed-content "\n\n" case "\n\n")))
 	  (when (string-match-p "<pre[\s>]" case)
+	    (setq processed-content (concat processed-content "\n\n" case "\n\n")))
+	  (when (string-match-p "<img[\s>]" case)
 	    (setq processed-content (concat processed-content "\n\n" case "\n\n")))
 	  (when (string-match-p "<p[\s>]" case)
 	    (setq processed-content (concat processed-content "\n\n" case "\n\n"))))))
@@ -243,7 +253,6 @@ website2org-url-to-org. Results will be presented in a buffer."
   (setq content (replace-regexp-in-string "<p\\s-\\([^>]*\\)>" "<p>" content))
   (setq content (replace-regexp-in-string "<em\s\\([^>]*\\)>" "<em>" content))
   (setq content (replace-regexp-in-string "<i\s\\([^>]*\\)>" "<i>" content))
-  (setq content (replace-regexp-in-string "<img\s\\([^>]*\\)>" "" content))
   (setq content (replace-regexp-in-string "\\(<figure[\s>]\\)\\s-*\\([^\0]+?\\)\\(</figure>\\)" "" content))
   (setq content (replace-regexp-in-string "<h1\\([^>]*\\)>" "<h1>" content))
   (setq content (replace-regexp-in-string "<h2\\([^>]*\\)>" "<h2>" content))
@@ -347,6 +356,15 @@ Currently this function is not needed/used."
       (goto-char (point-min))
       (while (re-search-forward "<a[\s\t].*+href=['\"]\\([^'\"]+\\)['\"][^>]*></a>" nil t)
 	  (replace-match "" t t))
+      (goto-char (point-min))
+;; transforming images into links
+      (while (re-search-forward "<img[ \t].*?src=['\"]\\([^'\"]+\\)['\"][^>]*</img>" nil t)
+	(let* ((url (match-string 1))
+	       (text (file-name-nondirectory url))
+	       (text (replace-regexp-in-string "[+_-]" " " text)))
+	  (setq url (replace-regexp-in-string "^#" "*" url))
+	  (replace-match (format "(/image:/ [[%s][%s]])" url text) t t)))
+      (goto-char (point-min))
  ;; this is to remove the traces of <strong> in <a href>     
       (goto-char (point-min))
       (while (re-search-forward "\\[\\*\\*" nil t)
