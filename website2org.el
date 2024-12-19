@@ -161,7 +161,7 @@ website2org-url-to-org. Results will be presented in a buffer."
 	 (case)
 	 (error-in-log)
 	 (title))
-;    (setq content (website2org-cleanup-remove-footer content)) 
+    (setq content (website2org-cleanup-remove-footer content)) 
     (with-temp-buffer 
       (insert content)
       (goto-char (point-min))
@@ -218,18 +218,14 @@ website2org-url-to-org. Results will be presented in a buffer."
 (defun website2org-cleanup-remove-footer (content)
   "Removes the footer from a HTML document." 
   (let ((result))
-    (with-temp-buffer 
+    (with-temp-buffer
       (insert content)
-      (let ((lines (split-string (buffer-string) "\n" t))
-	    (footer nil))
-	(erase-buffer)
-	(dolist (line lines)
-      	  (when (and (string-match-p "<[!-]*footer[^>]*>" line)
-		     (not (string-match-p "title" line)))
-	    (setq footer 1))
-	  (when (not footer)
-	    (insert line)))
-        (setq result (buffer-substring-no-properties (point-min)(point-max)))))))
+      (goto-char (point-min))
+      (if (re-search-forward "<[!-]*footer[^>]*>" nil t 1)
+          (setq result (buffer-substring-no-properties (point-min) (match-beginning 0)))
+        (setq result (buffer-substring-no-properties (point-min) (point-max)))))
+    result))
+
 
 
 (defun website2org-return-title (content)
