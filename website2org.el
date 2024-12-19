@@ -399,6 +399,7 @@ Currently this function is not needed/used."
   (let ((path (file-name-directory og-url)))
     (when (not (string-prefix-p "http" url))
       (when (string-prefix-p "/" url)
+	(setq path (replace-regexp-in-string "\\(http.*?//.*?/\\).*" "\\1" path))
         (setq url (string-remove-prefix "/" url)))
       (when (string-prefix-p "\"" path)
         (setq path (string-remove-prefix "\"" path)))
