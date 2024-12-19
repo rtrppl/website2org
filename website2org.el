@@ -368,7 +368,7 @@ Currently this function is not needed/used."
       (while (re-search-forward "<img[ \t].*?src=['\"]\\([^'\"]+\\)['\"][^>]*</img>" nil t)
 	(let* ((url (match-string 1))
 	       (text (file-name-nondirectory url))
-	       (url (website2org-fix-relative-links url og-url))
+	       (url (website2org-fix-relative-image-links url og-url))
 	       (text (replace-regexp-in-string "[+_-]" " " text)))
 	  (setq url (replace-regexp-in-string "^#" "*" url))
 	  (replace-match (format "(/image:/ [[%s][%s]])" url text) t t)))
@@ -398,8 +398,8 @@ Currently this function is not needed/used."
 	    (replace-match (concat begin-tag processed-content end-tag) on t t))))
       (buffer-substring-no-properties (point-min) (point-max))))
 
-(defun website2org-fix-relative-links (url og-url)
-  "Turns relative URLs into complete URLs."
+(defun website2org-fix-relative-image-links (url og-url)
+  "Turns relative image URLs into complete image URLs."
   (let ((path (file-name-directory og-url)))
     (when (not (string-prefix-p "http" url))
       (when (string-prefix-p "/" url)
@@ -409,6 +409,17 @@ Currently this function is not needed/used."
       (setq url (concat path url)))
     url))
 
+(defun website2org-fix-relative-links (url og-url)
+  "Turns relative URLs into complete URLs."
+  (let* ((path (file-name-directory og-url))
+	 (path (replace-regexp-in-string "\\(http.*?//.*?/\\).*" "\\1" path)))  
+    (when (not (string-prefix-p "http" url))
+      (when (string-prefix-p "/" url)
+        (setq url (string-remove-prefix "/" url)))
+      (when (string-prefix-p "\"" path)
+        (setq path (string-remove-prefix "\"" path)))
+      (setq url (concat path url)))
+    url))
 
 (defun website2org-cleanup-org-weird-characters (content)
   "Cleaning-up weird characters in the Orgmode content."
