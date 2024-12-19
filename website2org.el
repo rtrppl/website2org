@@ -96,7 +96,10 @@ website2org-url-to-org. Results will be presented in a buffer."
 	 (final))
     (when website2org-archive
       (shell-command (concat "open " website2org-archive-url url)))
-    (setq filename (concat website2org-directory time "-" (replace-regexp-in-string "[\"':;\s\\\/]" "_" title)))
+    (setq title (replace-regexp-in-string "[\"\|':;\s\\\/]" "_" title))
+    (when (> (length title) 100)
+	  (setq title (substring title 0 100)))
+    (setq filename (concat website2org-directory time "-" title))
     (website2org-delete-local-cache-file)
     (find-file (concat filename ".org"))
     (insert (concat "#+title: " time "-" (replace-regexp-in-string "[\(\)]" "-" title) "\n"))
@@ -105,6 +108,7 @@ website2org-url-to-org. Results will be presented in a buffer."
     (insert (concat "#+roam_key: " url "\n\n"))
     (insert org-content)
     (goto-char (point-min)))))
+
 
 (defun website2org-to-buffer (url)
   "Creates an Orgmode buffer from an URL."
@@ -147,7 +151,7 @@ website2org-url-to-org. Results will be presented in a buffer."
   (let ((content))
     (with-temp-buffer
       (insert-file-contents filename)
-      (setq content (buffer-substring-no-properties (point-min)(point-max))))
+      (setq content (buffer-string)))
     content))
 
 (defun website2org-process-html (content what og-url)
@@ -157,7 +161,7 @@ website2org-url-to-org. Results will be presented in a buffer."
 	 (case)
 	 (error-in-log)
 	 (title))
-    (setq content (website2org-cleanup-remove-footer content)) 
+;    (setq content (website2org-cleanup-remove-footer content)) 
     (with-temp-buffer 
       (insert content)
       (goto-char (point-min))
@@ -196,8 +200,9 @@ website2org-url-to-org. Results will be presented in a buffer."
 	    (setq processed-content (concat processed-content "\n\n" case "\n\n")))
 	  (when (string-match-p "<img[\s>]" case)
 	    (setq processed-content (concat processed-content "\n\n" case "\n\n")))
-	  (when (string-match-p "<p[\s>]" case)
-	    (setq processed-content (concat processed-content "\n\n" case "\n\n"))))))
+	  (when (and (string-match-p "<p[\s>]" case)
+		     (not (string-match-p "<img" case)))
+	    (setq processed-content (concat processed-content "\n\n" (replace-regexp-in-string "\n" " " case) "\n\n"))))))
     (setq processed-content (website2org-cleanup-remove-header processed-content))
     (setq processed-content (website2org-cleanup-html-tags processed-content))
     (setq title (website2org-return-title content))
