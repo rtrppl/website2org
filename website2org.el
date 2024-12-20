@@ -29,7 +29,8 @@
 ;; buffer or .org file.
 ;; 
 ;; 0.2.2
-;; - Improved support for many sites with code blocks
+;; - Improved support for many sites with code blocks, lists, images
+;; and more
 ;;
 ;; 0.2.1
 ;; - Added support for images
@@ -208,7 +209,8 @@ website2org-url-to-org. Results will be presented in a buffer."
 	  (when (string-match-p "<img[\s>]" case)
 	    (setq processed-content (concat processed-content "\n\n" case "\n\n")))
 	  (when (and (string-match-p "<p[\s>]" case)
-		     (not (string-match-p "<img" case)))
+		     (not (string-match-p "<img" case))
+		     (not (string-match-p "<li>" case)))
 	    (setq processed-content (concat processed-content "\n\n" (replace-regexp-in-string "\n" " " case) "\n\n"))))))
     (setq processed-content (website2org-cleanup-remove-header processed-content))
     (setq processed-content (website2org-cleanup-html-tags processed-content))
@@ -328,6 +330,7 @@ Currently this function is not needed/used."
  (setq content (replace-regexp-in-string "<strong>" "**" content))
  (setq content (replace-regexp-in-string "</strong>" "__** " content))
  (setq content (replace-regexp-in-string "\s*__\\*\\*" "**" content))
+ (setq content (replace-regexp-in-string "\\*\\*\s," "**, " content))
  (setq content (replace-regexp-in-string "<b>" "" content))
  (setq content (replace-regexp-in-string "</b>" "" content))
  (setq content (replace-regexp-in-string "<i>" "" content))
@@ -493,7 +496,18 @@ Currently this function is not needed/used."
 ;; no more than one empty line
     (setq content (replace-regexp-in-string "\n\\{2,\\}" "\n\n" content))
 ;; no empty line before END_SRC
-    (setq content (replace-regexp-in-string "^\n#\\+END_SRC" "#+END_SRC" content)))
+    (setq content (replace-regexp-in-string "^\n#\\+END_SRC" "#+END_SRC" content))
+;; no empty lines in a list
+;; remains a TODO
+    (with-temp-buffer
+      (insert content)
+      (goto-char (point-min))
+      (while (re-search-forward "\\(^-.*\n\\)\\(^[ \t]*\n\\)\\(^-.*\n\\)" nil t)
+	(when (match-string 0)
+	  (let* ((replacement (concat (match-string 1) (match-string 3))))
+	    (replace-match replacement t t)))
+	(forward-line -1))
+      (setq content (buffer-substring-no-properties (point-min)(point-max)))))
 
 (provide 'website2org)
 
