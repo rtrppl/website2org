@@ -4,7 +4,7 @@
 
 ;; Maintainer: René Trappel <rtrappel@gmail.com>
 ;; URL: https://github.com/rtrppl/website2org
-;; Version: 0.2
+;; Version: 0.2.2
 ;; Package-Requires: ((emacs "26"))
 ;; Keywords: comm
 
@@ -28,6 +28,13 @@
 ;; website2org.el allows to turn any website into a minimal orgmode
 ;; buffer or .org file.
 ;; 
+;; 0.2.2
+;; - Improved support for many sites with code blocks, lists, images
+;; and more
+;;
+;; 0.2.1
+;; - Added support for images
+;;
 ;; 0.2.0
 ;; - Added option to send downloaded URL to a web archive
 ;;
@@ -86,14 +93,17 @@ website2org-url-to-org. Results will be presented in a buffer."
  (with-temp-buffer
   (website2org-create-local-cache-file url)
   (let* ((content (website2org-load-file website2org-cache-filename))
-	 (title (website2org-process-html content "title"))
-	 (org-content (website2org-process-html content "content"))
+	 (title (website2org-process-html content "title" url))
+	 (org-content (website2org-process-html content "content" url))
 	 (time (format-time-string website2org-filename-time-format))
          (filename)
 	 (final))
     (when website2org-archive
       (shell-command (concat "open " website2org-archive-url url)))
-    (setq filename (concat website2org-directory time "-" (replace-regexp-in-string "[\"':;\s\\\/]" "_" title)))
+    (setq filename (replace-regexp-in-string "[\"\|':;\s\\\/]" "_" title))
+    (when (> (length filename) 100)
+	  (setq filename (substring title 0 100)))
+    (setq filename (concat website2org-directory time "-" filename))
     (website2org-delete-local-cache-file)
     (find-file (concat filename ".org"))
     (insert (concat "#+title: " time "-" (replace-regexp-in-string "[\(\)]" "-" title) "\n"))
@@ -103,16 +113,17 @@ website2org-url-to-org. Results will be presented in a buffer."
     (insert org-content)
     (goto-char (point-min)))))
 
-(defun website2org-to-buffer (URL)
+
+(defun website2org-to-buffer (url)
   "Creates an Orgmode buffer from an URL."
   (with-temp-buffer
-    (website2org-create-local-cache-file URL)
+    (website2org-create-local-cache-file url)
     (let* ((content (website2org-load-file website2org-cache-filename))
-	   (title (website2org-process-html content "title"))
-	   (org-content (website2org-process-html content "content"))
+	   (title (website2org-process-html content "title" url))
+	   (org-content (website2org-process-html content "content" url))
 	   (final))
       (website2org-delete-local-cache-file)
-    (setq final (concat "#+roam_key: " URL "\n\n" org-content))
+    (setq final (concat "#+roam_key: " url "\n\n" org-content))
     (setq final (concat "#+title: " title "\n" final))
     (with-current-buffer (get-buffer-create "website2org")
       (erase-buffer)
@@ -144,10 +155,10 @@ website2org-url-to-org. Results will be presented in a buffer."
   (let ((content))
     (with-temp-buffer
       (insert-file-contents filename)
-      (setq content (buffer-substring-no-properties (point-min)(point-max))))
+      (setq content (buffer-string)))
     content))
 
-(defun website2org-process-html (content what)
+(defun website2org-process-html (content what og-url)
   "Main function to transform html into minimal org."
   (let* ((processed-content)
 	 (return)
@@ -158,15 +169,22 @@ website2org-url-to-org. Results will be presented in a buffer."
     (with-temp-buffer 
       (insert content)
       (goto-char (point-min))
+      (while (re-search-forward "<img[ \t].*?src=['\"]\\([^'\"]+\\)['\"][^>]*>" nil t)
+	  (let* ((url (match-string 1))
+		 (replacement (concat "<img src=\"" url "\"</img>"))) ;; creating a fake image end-tag here
+	  (replace-match replacement t t)))
+      (goto-char (point-min))
       (while (re-search-forward "\\(<blockquote\\)\\s-*\\([^\0]+?\\)\\(</blockquote>\\)" nil t)
 	(when (match-string 0)
 	  (let* ((replacement (replace-regexp-in-string "<p[\s>]*>" " " (match-string 0)))
 		 (replacement (replace-regexp-in-string "</p>" " " replacement))
 		 (replacement (replace-regexp-in-string "<pre\\s-*[^>]*>" "\n\n#+BEGIN_SRC\n" replacement))
-		 (replacement (replace-regexp-in-string "</pre>" "\n#+END_SRC\n\n" replacement)))
+		 (replacement (replace-regexp-in-string "</pre>" "\n#+END_SRC\n\n" replacement))
+		 (replacement (replace-regexp-in-string "<code>" "" replacement))
+		 (replacement (replace-regexp-in-string "</code>" "" replacement)))
 	    (replace-match replacement t t))))
       (goto-char (point-min))
-      (while (re-search-forward "\\(<p[\s>]\\|<blockquote\\|<pre[\s>]\\|<h1\\|<h2\\|<h3\\|<ul\\|<ol\\|<title\\)\\s-*\\([^\0]+?\\)\\(</p>\\|</blockquote>\\|</pre>\\|</h1>\\|</h2>\\|</h3>\\|</ul>\\|</ol>\\|</title>\\)" nil t)
+      (while (re-search-forward "\\(<p[\s>]\\|<blockquote\\|<pre[\s>]\\|<h1\\|<h2\\|<h3\\|<ul\\|<ol\\|<title\\|<img\\)\\s-*\\([^\0]+?\\)\\(</p>\\|</blockquote>\\|</pre>\\|</h1>\\|</h2>\\|</h3>\\|</ul>\\|</ol>\\|</title>\\|</img>\\)" nil t)
 	(when (match-string 0)
 	  (setq case (match-string 0))
 	  (when (and (or (string-match-p "<h1" case)
@@ -185,13 +203,19 @@ website2org-url-to-org. Results will be presented in a buffer."
 	  (when (string-match-p "<blockquote" case)
 	    (setq processed-content (concat processed-content "\n\n" case "\n\n")))
 	  (when (string-match-p "<pre[\s>]" case)
+	    (setq case (replace-regexp-in-string "<code>" "" case))
+	    (setq case (replace-regexp-in-string "</code>" "" case))
 	    (setq processed-content (concat processed-content "\n\n" case "\n\n")))
-	  (when (string-match-p "<p[\s>]" case)
-	    (setq processed-content (concat processed-content "\n\n" case "\n\n"))))))
+	  (when (string-match-p "<img[\s>]" case)
+	    (setq processed-content (concat processed-content "\n\n" case "\n\n")))
+	  (when (and (string-match-p "<p[\s>]" case)
+		     (not (string-match-p "<img" case))
+		     (not (string-match-p "<li>" case)))
+	    (setq processed-content (concat processed-content "\n\n" (replace-regexp-in-string "\n" " " case) "\n\n"))))))
     (setq processed-content (website2org-cleanup-remove-header processed-content))
     (setq processed-content (website2org-cleanup-html-tags processed-content))
     (setq title (website2org-return-title content))
-    (setq processed-content (website2org-html-to-org processed-content))
+    (setq processed-content (website2org-html-to-org processed-content og-url))
     (setq processed-content (website2org-cleanup-org-weird-characters processed-content))
     (setq processed-content (website2org-cleanup-org processed-content))
     (when (string-equal what "title")
@@ -203,19 +227,13 @@ website2org-url-to-org. Results will be presented in a buffer."
 (defun website2org-cleanup-remove-footer (content)
   "Removes the footer from a HTML document." 
   (let ((result))
-    (with-temp-buffer 
+    (with-temp-buffer
       (insert content)
-      (let ((lines (split-string (buffer-string) "\n" t))
-	    (footer nil))
-	(erase-buffer)
-	(dolist (line lines)
-      	  (when (and (string-match-p "<[!-]*footer[^>]*>" line)
-		     (not (string-match-p "title" line)))
-	    (setq footer 1))
-	  (when (not footer)
-	    (insert line)))
-        (setq result (buffer-substring-no-properties (point-min)(point-max)))))))
-
+      (goto-char (point-min))
+      (if (re-search-forward "<[!-]*footer[^>]*>" nil t 1)
+          (setq result (buffer-substring-no-properties (point-min) (match-beginning 0)))
+        (setq result (buffer-substring-no-properties (point-min) (point-max)))))
+    result))
 
 (defun website2org-return-title (content)
   "Returns the title of a HTML document."
@@ -243,8 +261,8 @@ website2org-url-to-org. Results will be presented in a buffer."
   (setq content (replace-regexp-in-string "<p\\s-\\([^>]*\\)>" "<p>" content))
   (setq content (replace-regexp-in-string "<em\s\\([^>]*\\)>" "<em>" content))
   (setq content (replace-regexp-in-string "<i\s\\([^>]*\\)>" "<i>" content))
-  (setq content (replace-regexp-in-string "<img\s\\([^>]*\\)>" "" content))
   (setq content (replace-regexp-in-string "\\(<figure[\s>]\\)\\s-*\\([^\0]+?\\)\\(</figure>\\)" "" content))
+  (setq content (replace-regexp-in-string "\\(<include-fragment[\s>]\\)\\s-*\\([^\0]+?\\)\\(</include-fragment>\\)" "" content))
   (setq content (replace-regexp-in-string "<h1\\([^>]*\\)>" "<h1>" content))
   (setq content (replace-regexp-in-string "<h2\\([^>]*\\)>" "<h2>" content))
   (setq content (replace-regexp-in-string "<h3\\([^>]*\\)>" "<h3>" content))
@@ -299,7 +317,7 @@ Currently this function is not needed/used."
       (shell-command-on-region (point-min) (point-max) "pandoc -f html -t org --wrap=preserve" t t)
     (setq content (buffer-substring-no-properties (point-min)(point-max)))))
    
-(defun website2org-html-to-org (content)
+(defun website2org-html-to-org (content og-url)
   "Turns the filtered HTML content into clean Orgmode content."
  (setq content (replace-regexp-in-string "<h1>" "* " content))
  (setq content (replace-regexp-in-string "</h1>" "" content))
@@ -310,7 +328,9 @@ Currently this function is not needed/used."
  (setq content (replace-regexp-in-string "<p>" "" content))
  (setq content (replace-regexp-in-string "</p>" "\n" content))
  (setq content (replace-regexp-in-string "<strong>" "**" content))
- (setq content (replace-regexp-in-string "</strong>" "**" content))
+ (setq content (replace-regexp-in-string "</strong>" "__** " content))
+ (setq content (replace-regexp-in-string "\s*__\\*\\*" "**" content))
+ (setq content (replace-regexp-in-string "\\*\\*\s," "**, " content))
  (setq content (replace-regexp-in-string "<b>" "" content))
  (setq content (replace-regexp-in-string "</b>" "" content))
  (setq content (replace-regexp-in-string "<i>" "" content))
@@ -340,13 +360,26 @@ Currently this function is not needed/used."
       (insert content)
       (goto-char (point-min))
       (while (re-search-forward "<a[\s\t].*?href=['\"]\\([^'\"]+\\)['\"][^>]*>\\([^<]+\\)</a>" nil t)
-	(let ((url (match-string 1))
-	      (text (match-string 2)))
-	  (setq url (replace-regexp-in-string "^#" "*" url))
+	(let* ((url (match-string 1))
+	      (url (website2org-fix-relative-links url og-url))
+	      (url (replace-regexp-in-string "^#" "*" url))
+	      (text (match-string 2))
+	      (text (replace-regexp-in-string "[\n\t]" "" text))
+	      (text (replace-regexp-in-string "^[ \t]+" "" text)))
 	  (replace-match (format "[[%s][%s]]" url text) t t)))
       (goto-char (point-min))
       (while (re-search-forward "<a[\s\t].*+href=['\"]\\([^'\"]+\\)['\"][^>]*></a>" nil t)
 	  (replace-match "" t t))
+      (goto-char (point-min))
+;; transforming images into links
+      (while (re-search-forward "<img[ \t].*?src=['\"]\\([^'\"]+\\)['\"][^>]*</img>" nil t)
+	(let* ((url (match-string 1))
+	       (text (file-name-nondirectory url))
+	       (url (website2org-fix-relative-image-links url og-url))
+	       (text (replace-regexp-in-string "[+_-]" " " text)))
+	  (setq url (replace-regexp-in-string "^#" "*" url))
+	  (replace-match (format "(/image:/ [[%s][%s]])" url text) t t)))
+      (goto-char (point-min))
  ;; this is to remove the traces of <strong> in <a href>     
       (goto-char (point-min))
       (while (re-search-forward "\\[\\*\\*" nil t)
@@ -371,6 +404,30 @@ Currently this function is not needed/used."
 		 (processed-content (split-string content "\n")))
 	    (replace-match (concat begin-tag processed-content end-tag) on t t))))
       (buffer-substring-no-properties (point-min) (point-max))))
+
+(defun website2org-fix-relative-image-links (url og-url)
+  "Turns relative image URLs into complete image URLs."
+  (let ((path (file-name-directory og-url)))
+    (when (not (string-prefix-p "http" url))
+      (when (string-prefix-p "/" url)
+	(setq path (replace-regexp-in-string "\\(http.*?//.*?/\\).*" "\\1" path))
+        (setq url (string-remove-prefix "/" url)))
+      (when (string-prefix-p "\"" path)
+        (setq path (string-remove-prefix "\"" path)))
+      (setq url (concat path url)))
+    url))
+
+(defun website2org-fix-relative-links (url og-url)
+  "Turns relative URLs into complete URLs."
+  (let* ((path (file-name-directory og-url))
+	 (path (replace-regexp-in-string "\\(http.*?//.*?/\\).*" "\\1" path)))  
+    (when (not (string-prefix-p "http" url))
+      (when (string-prefix-p "/" url)
+        (setq url (string-remove-prefix "/" url)))
+      (when (string-prefix-p "\"" path)
+        (setq path (string-remove-prefix "\"" path)))
+      (setq url (concat path url)))
+    url))
 
 (defun website2org-cleanup-org-weird-characters (content)
   "Cleaning-up weird characters in the Orgmode content."
@@ -437,7 +494,20 @@ Currently this function is not needed/used."
 ;; no empty lines that just start with - 
     (setq content (replace-regexp-in-string "^- $\\|^-$" "" content))
 ;; no more than one empty line
-    (setq content (replace-regexp-in-string "\n\\{2,\\}" "\n\n" content)))
+    (setq content (replace-regexp-in-string "\n\\{2,\\}" "\n\n" content))
+;; no empty line before END_SRC
+    (setq content (replace-regexp-in-string "^\n#\\+END_SRC" "#+END_SRC" content))
+;; no empty lines in a list
+;; remains a TODO
+    (with-temp-buffer
+      (insert content)
+      (goto-char (point-min))
+      (while (re-search-forward "\\(^-.*\n\\)\\(^[ \t]*\n\\)\\(^-.*\n\\)" nil t)
+	(when (match-string 0)
+	  (let* ((replacement (concat (match-string 1) (match-string 3))))
+	    (replace-match replacement t t)))
+	(forward-line -1))
+      (setq content (buffer-substring-no-properties (point-min)(point-max)))))
 
 (provide 'website2org)
 
