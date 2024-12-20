@@ -260,6 +260,7 @@ website2org-url-to-org. Results will be presented in a buffer."
   (setq content (replace-regexp-in-string "<em\s\\([^>]*\\)>" "<em>" content))
   (setq content (replace-regexp-in-string "<i\s\\([^>]*\\)>" "<i>" content))
   (setq content (replace-regexp-in-string "\\(<figure[\s>]\\)\\s-*\\([^\0]+?\\)\\(</figure>\\)" "" content))
+  (setq content (replace-regexp-in-string "\\(<include-fragment[\s>]\\)\\s-*\\([^\0]+?\\)\\(</include-fragment>\\)" "" content))
   (setq content (replace-regexp-in-string "<h1\\([^>]*\\)>" "<h1>" content))
   (setq content (replace-regexp-in-string "<h2\\([^>]*\\)>" "<h2>" content))
   (setq content (replace-regexp-in-string "<h3\\([^>]*\\)>" "<h3>" content))
