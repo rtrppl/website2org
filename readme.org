@@ -27,19 +27,19 @@ Still, there are some known issues even with otherwise working websites. Orgmode
 
 ** Change log
 
-**0.2.2**
+*0.2.2*
 - Improved support for many sites with code blocks
 
-**0.2.1**
+*0.2.1*
 - Added support for images
 
-**0.2.0**
+*0.2.0*
 - Added option to send downloaded URL to a web archive
 
-**0.1.4**
+*0.1.4*
 - several small fixes; several links in one line are now correctly dealt with
 
-**0.1.3**
+*0.1.3*
 - Bug fixes for the case when there is no <h1> tag; more parsing  
 
 *0.1.2*
