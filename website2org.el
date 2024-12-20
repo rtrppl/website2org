@@ -4,7 +4,7 @@
 
 ;; Maintainer: René Trappel <rtrappel@gmail.com>
 ;; URL: https://github.com/rtrppl/website2org
-;; Version: 0.2.1
+;; Version: 0.2.2
 ;; Package-Requires: ((emacs "26"))
 ;; Keywords: comm
 
@@ -28,6 +28,9 @@
 ;; website2org.el allows to turn any website into a minimal orgmode
 ;; buffer or .org file.
 ;; 
+;; 0.2.2
+;; - Improved support for many sites with code blocks
+;;
 ;; 0.2.1
 ;; - Added support for images
 ;;
@@ -230,8 +233,6 @@ website2org-url-to-org. Results will be presented in a buffer."
         (setq result (buffer-substring-no-properties (point-min) (point-max)))))
     result))
 
-
-
 (defun website2org-return-title (content)
   "Returns the title of a HTML document."
   (let ((title)
@@ -357,8 +358,10 @@ Currently this function is not needed/used."
       (while (re-search-forward "<a[\s\t].*?href=['\"]\\([^'\"]+\\)['\"][^>]*>\\([^<]+\\)</a>" nil t)
 	(let* ((url (match-string 1))
 	      (url (website2org-fix-relative-links url og-url))
-	      (text (match-string 2)))
-	  (setq url (replace-regexp-in-string "^#" "*" url))
+	      (url (replace-regexp-in-string "^#" "*" url))
+	      (text (match-string 2))
+	      (text (replace-regexp-in-string "[\n\t]" "" text))
+	      (text (replace-regexp-in-string "^[ \t]+" "" text)))
 	  (replace-match (format "[[%s][%s]]" url text) t t)))
       (goto-char (point-min))
       (while (re-search-forward "<a[\s\t].*+href=['\"]\\([^'\"]+\\)['\"][^>]*></a>" nil t)
