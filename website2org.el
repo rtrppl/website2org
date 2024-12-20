@@ -175,7 +175,9 @@ website2org-url-to-org. Results will be presented in a buffer."
 	  (let* ((replacement (replace-regexp-in-string "<p[\s>]*>" " " (match-string 0)))
 		 (replacement (replace-regexp-in-string "</p>" " " replacement))
 		 (replacement (replace-regexp-in-string "<pre\\s-*[^>]*>" "\n\n#+BEGIN_SRC\n" replacement))
-		 (replacement (replace-regexp-in-string "</pre>" "\n#+END_SRC\n\n" replacement)))
+		 (replacement (replace-regexp-in-string "</pre>" "\n#+END_SRC\n\n" replacement))
+		 (replacement (replace-regexp-in-string "<code>" "" replacement))
+		 (replacement (replace-regexp-in-string "</code>" "" replacement)))
 	    (replace-match replacement t t))))
       (goto-char (point-min))
       (while (re-search-forward "\\(<p[\s>]\\|<blockquote\\|<pre[\s>]\\|<h1\\|<h2\\|<h3\\|<ul\\|<ol\\|<title\\|<img\\)\\s-*\\([^\0]+?\\)\\(</p>\\|</blockquote>\\|</pre>\\|</h1>\\|</h2>\\|</h3>\\|</ul>\\|</ol>\\|</title>\\|</img>\\)" nil t)
@@ -197,6 +199,8 @@ website2org-url-to-org. Results will be presented in a buffer."
 	  (when (string-match-p "<blockquote" case)
 	    (setq processed-content (concat processed-content "\n\n" case "\n\n")))
 	  (when (string-match-p "<pre[\s>]" case)
+	    (setq case (replace-regexp-in-string "<code>" "" case))
+	    (setq case (replace-regexp-in-string "</code>" "" case))
 	    (setq processed-content (concat processed-content "\n\n" case "\n\n")))
 	  (when (string-match-p "<img[\s>]" case)
 	    (setq processed-content (concat processed-content "\n\n" case "\n\n")))
@@ -483,7 +487,9 @@ Currently this function is not needed/used."
 ;; no empty lines that just start with - 
     (setq content (replace-regexp-in-string "^- $\\|^-$" "" content))
 ;; no more than one empty line
-    (setq content (replace-regexp-in-string "\n\\{2,\\}" "\n\n" content)))
+    (setq content (replace-regexp-in-string "\n\\{2,\\}" "\n\n" content))
+;; no empty line before END_SRC
+    (setq content (replace-regexp-in-string "^\n#\\+END_SRC" "#+END_SRC" content)))
 
 (provide 'website2org)
 
