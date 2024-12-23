@@ -17,7 +17,7 @@ You can automatically forward downloaded websites to an archiving website via =(
 
 ** Minimal Orgmode
 
-website2org ignores all information before the first =<h1>= headline and everything coming after the =<footer>=. All data about images, source, =<div>= and similar types of tags are also ignored. It respects all paragraphs, headlines, lists (ordered and not), inline code, block quotes, =<pre>= (line breaks are still an issue here), links (including local links), =<strong>=, and =<em>=. Tabs and multiple spaces are reduced to one space. A new line cannot start with a space (or "- " followed by nothing).
+website2org ignores all information before the first =<h1>= headline and everything coming after the =<footer>=. All data about source, =<div>= and similar types of tags are also ignored. It respects all paragraphs, headlines, lists (ordered and not), inline code, block quotes, =<pre>=, links (including local links), =<strong>=, and =<em>=. Tabs and multiple spaces are reduced to one space. A new line cannot start with a space (or "- " followed by nothing).
 
 ** Known issues
 
