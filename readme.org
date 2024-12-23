@@ -27,6 +27,9 @@ Still, there are some known issues even with otherwise working websites. Orgmode
 
 ** Change log
 
+*0.2.3*
+- Improved handling of <footer> tag + some more fixes
+
 *0.2.2*
 - Improved support for many sites with code blocks
 

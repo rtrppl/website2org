@@ -4,7 +4,7 @@
 
 ;; Maintainer: René Trappel <rtrappel@gmail.com>
 ;; URL: https://github.com/rtrppl/website2org
-;; Version: 0.2.2
+;; Version: 0.2.3
 ;; Package-Requires: ((emacs "26"))
 ;; Keywords: comm
 
@@ -28,6 +28,9 @@
 ;; website2org.el allows to turn any website into a minimal orgmode
 ;; buffer or .org file.
 ;; 
+;; 0.2.3
+;; - Improved handling of <footer> + some more fixes
+;;
 ;; 0.2.2
 ;; - Improved support for many sites with code blocks, lists, images
 ;; and more
@@ -176,8 +179,8 @@ website2org-url-to-org. Results will be presented in a buffer."
       (goto-char (point-min))
       (while (re-search-forward "\\(<blockquote\\)\\s-*\\([^\0]+?\\)\\(</blockquote>\\)" nil t)
 	(when (match-string 0)
-	  (let* ((replacement (replace-regexp-in-string "<p[\s>]*>" " " (match-string 0)))
-		 (replacement (replace-regexp-in-string "</p>" " " replacement))
+	  (let* ((replacement (replace-regexp-in-string "<p[^>]*>" " " (match-string 0)))
+		 (replacement (replace-regexp-in-string "</p>" "\n" replacement))
 		 (replacement (replace-regexp-in-string "<pre\\s-*[^>]*>" "\n\n#+BEGIN_SRC\n" replacement))
 		 (replacement (replace-regexp-in-string "</pre>" "\n#+END_SRC\n\n" replacement))
 		 (replacement (replace-regexp-in-string "<code>" "" replacement))
@@ -231,9 +234,14 @@ website2org-url-to-org. Results will be presented in a buffer."
       (insert content)
       (goto-char (point-min))
       (if (re-search-forward "<[!-]*footer[^>]*>" nil t 1)
-          (setq result (buffer-substring-no-properties (point-min) (match-beginning 0)))
-        (setq result (buffer-substring-no-properties (point-min) (point-max)))))
-    result))
+	  (progn
+	    (when (string-match-p "header" (match-string 0))
+	      (re-search-forward "<[!-]*footer[^>]*>" nil t 1)
+	      (setq result (buffer-substring-no-properties (point-min) (match-beginning 0))))
+	    (when (not (string-match-p "header" (match-string 0)))
+              (setq result (buffer-substring-no-properties (point-min) (match-beginning 0)))))
+        (setq result (buffer-substring-no-properties (point-min) (point-max))))
+    result)))
 
 (defun website2org-return-title (content)
   "Returns the title of a HTML document."
@@ -354,7 +362,7 @@ Currently this function is not needed/used."
  (setq content (replace-regexp-in-string "<blockquote>" "#+BEGIN_QUOTE\n" content))
  (setq content (replace-regexp-in-string "</blockquote>" "\n#+END_QUOTE" content))
  (setq content (replace-regexp-in-string "<br>" "\n" content))
- (setq content (replace-regexp-in-string "<br />" "\n" content))
+ (setq content (replace-regexp-in-string "<br\s/>" "\n" content))
  ;; transforming links
  (with-temp-buffer 
       (insert content)
@@ -495,8 +503,14 @@ Currently this function is not needed/used."
     (setq content (replace-regexp-in-string "^- $\\|^-$" "" content))
 ;; no more than one empty line
     (setq content (replace-regexp-in-string "\n\\{2,\\}" "\n\n" content))
+;; proper italics
+    (setq content (replace-regexp-in-string " \/$" "/" content))
 ;; no empty line before END_SRC
     (setq content (replace-regexp-in-string "^\n#\\+END_SRC" "#+END_SRC" content))
+;; no empty line before END_QUOTE
+    (setq content (replace-regexp-in-string "^\n#\\+END_QUOTE" "#+END_QUOTE" content))
+;; no empty line after BEGIN_QUOTE
+    (setq content (replace-regexp-in-string "^#\\+BEGIN_QUOTE\n" "#+BEGIN_QUOTE" content))
 ;; no empty lines in a list
 ;; remains a TODO
     (with-temp-buffer
