@@ -430,12 +430,16 @@ Currently this function is not needed/used."
   "Turns relative URLs into complete URLs."
   (let* ((path (file-name-directory og-url))
 	 (path (replace-regexp-in-string "\\(http.*?//.*?/\\).*" "\\1" path)))  
-    (when (not (string-prefix-p "http" url))
-      (when (string-prefix-p "/" url)
+    (when (and (not (string-prefix-p "http" url))
+	       (not (string-prefix-p "//" url)))
+      (when (and (string-prefix-p "/" url)
+		 (not (string-prefix-p "//" url)))
         (setq url (string-remove-prefix "/" url)))
       (when (string-prefix-p "\"" path)
         (setq path (string-remove-prefix "\"" path)))
       (setq url (concat path url)))
+    (when (string-prefix-p "//" url)
+      (setq url (concat "https:" url)))
     url))
 
 (defun website2org-cleanup-org-weird-characters (content)
