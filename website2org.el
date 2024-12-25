@@ -172,9 +172,9 @@ website2org-url-to-org. Results will be presented in a buffer."
     (with-temp-buffer 
       (insert content)
       (goto-char (point-min))
-      (while (re-search-forward "<img[ \t].*?src=['\"]\\([^'\"]+\\)['\"][^>]*>" nil t)
-	  (let* ((url (match-string 1))
-		 (replacement (concat "<img src=\"" url "\"</img>"))) ;; creating a fake image end-tag here
+      (while (re-search-forward "<img[ \t][^>]*?src=\\(['\"]?\\)\\([^'\" \t>]+\\)\\1[^>]*>" nil t)
+	  (let* ((url (match-string 2))
+		 (replacement (concat "\n<img src=\"" url "\"</img>"))) ;; creating a fake image end-tag here
 	  (replace-match replacement t t)))
       (goto-char (point-min))
       (while (re-search-forward "\\(<blockquote\\)\\s-*\\([^\0]+?\\)\\(</blockquote>\\)" nil t)
