@@ -363,6 +363,8 @@ Currently this function is not needed/used."
  (setq content (replace-regexp-in-string "</li>" "\n" content))
  (setq content (replace-regexp-in-string "<code>" "=" content))
  (setq content (replace-regexp-in-string "</code>" "=" content))
+ (setq content (replace-regexp-in-string "<div>" "=" content))
+ (setq content (replace-regexp-in-string "</div>" "=" content))
  (setq content (replace-regexp-in-string "<pre>" "#+BEGIN_SRC\n" content))
  (setq content (replace-regexp-in-string "</pre>" "\n#+END_SRC" content))
  (setq content (replace-regexp-in-string "<blockquote>" "#+BEGIN_QUOTE\n" content))
