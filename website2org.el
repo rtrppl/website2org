@@ -4,7 +4,7 @@
 
 ;; Maintainer: René Trappel <rtrappel@gmail.com>
 ;; URL: https://github.com/rtrppl/website2org
-;; Version: 0.2.3
+;; Version: 0.2.4
 ;; Package-Requires: ((emacs "26"))
 ;; Keywords: comm
 
@@ -28,6 +28,9 @@
 ;; website2org.el allows to turn any website into a minimal orgmode
 ;; buffer or .org file.
 ;; 
+;; 0.2.4
+;; - More fixes
+;;
 ;; 0.2.3
 ;; - Improved handling of <footer> + some more fixes
 ;;
@@ -148,11 +151,6 @@ website2org-url-to-org. Results will be presented in a buffer."
   "Uses wget to download a website into a local cache file."
   (shell-command (concat website2org-wget-cmd "\"" URL "\"" " -O " website2org-cache-filename) t))
 
-
-(defun website2org-delete-local-cache-file ()
-  "Deletes the website2org local cache file."
-  (delete-file website2org-cache-filename))
-
 (defun website2org-load-file (filename)
   "Returns the plain html of a html-file."
   (let ((content))
@@ -160,6 +158,10 @@ website2org-url-to-org. Results will be presented in a buffer."
       (insert-file-contents filename)
       (setq content (buffer-string)))
     content))
+
+(defun website2org-delete-local-cache-file ()
+  "Deletes the website2org local cache file."
+  (delete-file website2org-cache-filename))
 
 (defun website2org-process-html (content what og-url)
   "Main function to transform html into minimal org."
@@ -187,7 +189,7 @@ website2org-url-to-org. Results will be presented in a buffer."
 		 (replacement (replace-regexp-in-string "</code>" "" replacement)))
 	    (replace-match replacement t t))))
       (goto-char (point-min))
-      (while (re-search-forward "\\(<p[\s>]\\|<blockquote\\|<pre\\|<h1\\|<h2\\|<h3\\|<ul\\|<ol\\|<li[\s>]\\|<title\\|<img\\)\\s-*\\([^\0]+?\\)\\(</p>\\|</blockquote>\\|</pre>\\|</h1>\\|</h2>\\|</h3>\\|</ul>\\|</ol>\\|</li>\\|</title>\\|</img>\\)" nil t)
+      (while (re-search-forward "\\(<p[\s>]\\|<blockquote\\|<pre\\|<h1\\|<h2\\|<h3\\|<li[\s>]\\|<title\\|<img\\)\\s-*\\([^\0]+?\\)\\(</p>\\|</blockquote>\\|</pre>\\|</h1>\\|</h2>\\|</h3>\\|</ul>\\|</ol>\\|</li>\\|</title>\\|</img>\\)" nil t)
 	(when (match-string 0)
 	  (setq case (match-string 0))
 	  (when (or (string-match-p "<h1" case)
@@ -196,16 +198,14 @@ website2org-url-to-org. Results will be presented in a buffer."
 	    (setq case (replace-regexp-in-string "<ul[^>]*>" "" case))
 	    (setq case (replace-regexp-in-string "<ol[^>]*>" "" case))
 	    (setq case (replace-regexp-in-string "<li[^>]*>" "" case))
-	    (setq processed-content (concat processed-content "\n\n" case "\n\n")))
-	  (when (and (string-match-p "<ul[^>]*>" case)
-		     (not (string-match-p "<ol" case))
-		     (not (string-match-p "<li" case)))
-	    (setq processed-content (concat processed-content "\n\n" case "\n\n")))
-	  (when (and (string-match-p "<ol[^>]*>" case)
-		     (not (string-match-p "<li" case)))
+	    (setq case (replace-regexp-in-string "\n" "" case 1))
+	    (setq case (replace-regexp-in-string "</span>" "\n" case 1))
 	    (setq processed-content (concat processed-content "\n\n" case "\n\n")))
 	  (when (and (string-match-p "<li[^>]*>" case)
+		     (not (string-match-p "<img" case))
 		     (not (string-match-p "<p" case)))
+	    (setq case (replace-regexp-in-string "<ul[^>]*>" "\n" case))
+	    (setq case (replace-regexp-in-string "<ol[^>]*>" "\n" case))
 	    (setq processed-content (concat processed-content "\n\n" case "\n\n")))
 	  (when (string-match-p "<blockquote" case)
 	    (setq processed-content (concat processed-content "\n\n" case "\n\n")))
@@ -288,6 +288,7 @@ website2org-url-to-org. Results will be presented in a buffer."
   (setq content (replace-regexp-in-string "<ol\\([^>]*\\)>" "<ol>" content))
   (setq content (replace-regexp-in-string "<time\\([^>]*\\)>" "" content))
   (setq content (replace-regexp-in-string "</time\\([^>]*\\)>" "" content))
+  (setq content (replace-regexp-in-string "<picture\\([^>]*\\)>" "" content))
   (setq content (replace-regexp-in-string "<input\\([^>]*\\)>" "" content))
   (setq content (replace-regexp-in-string "</input\\([^>]*\\)>" "" content))
   (setq content (replace-regexp-in-string "<pre>.*<code>" "<pre>" content))
