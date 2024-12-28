@@ -29,7 +29,7 @@
 ;; buffer or .org file.
 ;; 
 ;; 0.2.4
-;; - More fixes
+;; - More fixes (+ support for some footnotes)
 ;;
 ;; 0.2.3
 ;; - Improved handling of <footer> + some more fixes
@@ -198,7 +198,7 @@ website2org-url-to-org. Results will be presented in a buffer."
 	    (setq case (replace-regexp-in-string "<ul[^>]*>" "" case))
 	    (setq case (replace-regexp-in-string "<ol[^>]*>" "" case))
 	    (setq case (replace-regexp-in-string "<li[^>]*>" "" case))
-	    (setq case (replace-regexp-in-string "\n" "" case 1))
+	    (setq case (replace-regexp-in-string "\n" "" case))
 	    (setq case (replace-regexp-in-string "</span>" "\n" case 1))
 	    (setq processed-content (concat processed-content "\n\n" case "\n\n")))
 	  (when (and (string-match-p "<li[^>]*>" case)
@@ -291,6 +291,10 @@ website2org-url-to-org. Results will be presented in a buffer."
   (setq content (replace-regexp-in-string "<picture\\([^>]*\\)>" "" content))
   (setq content (replace-regexp-in-string "<input\\([^>]*\\)>" "" content))
   (setq content (replace-regexp-in-string "</input\\([^>]*\\)>" "" content))
+  (setq content (replace-regexp-in-string "<form\\([^>]*\\)>" "" content))
+  (setq content (replace-regexp-in-string "</form\\([^>]*\\)>" "" content))
+  (setq content (replace-regexp-in-string "<label\\([^>]*\\)>" "" content))
+  (setq content (replace-regexp-in-string "</label\\([^>]*\\)>" "" content))
   (setq content (replace-regexp-in-string "<pre>.*<code>" "<pre>" content))
   (setq content (replace-regexp-in-string "</code>.*</pre>" "</pre>" content))
   (setq content (replace-regexp-in-string "<strong\\([^>]*\\)>" "<strong>" content))
@@ -353,6 +357,14 @@ Currently this function is not needed/used."
  (setq content (replace-regexp-in-string "</kbd>" "~" content))
  (setq content (replace-regexp-in-string "<em>" " /" content))
  (setq content (replace-regexp-in-string "</em>" "/ " content))
+ (setq content (replace-regexp-in-string "<cite\\([^>]*\\)>" " /" content))
+ (setq content (replace-regexp-in-string "</cite>" "/ " content))
+ (setq content (replace-regexp-in-string "<header>" "" content))
+ (setq content (replace-regexp-in-string "</header>" "" content))
+ (setq content (replace-regexp-in-string "<center>" "" content))
+ (setq content (replace-regexp-in-string "</center>" "" content))
+ (setq content (replace-regexp-in-string "<aside>" "" content))
+ (setq content (replace-regexp-in-string "</aside>" "\n" content))
  (setq content (replace-regexp-in-string "<ul>" "" content))
  (setq content (replace-regexp-in-string "</ul>" "\n" content))
  (setq content (replace-regexp-in-string "<ol>" "" content))
@@ -361,15 +373,22 @@ Currently this function is not needed/used."
  (setq content (replace-regexp-in-string "\\([^\n]\\)\\(<li>\\)" "\\1\n- " content))
  (setq content (replace-regexp-in-string "<li>" "- " content))
  (setq content (replace-regexp-in-string "</li>" "\n" content))
- (setq content (replace-regexp-in-string "<code>" "=" content))
+ (setq content (replace-regexp-in-string "<code\\([^>]*\\)>" "=" content))
  (setq content (replace-regexp-in-string "</code>" "=" content))
+ (setq content (replace-regexp-in-string "<samp\\([^>]*\\)>" "=" content))
+ (setq content (replace-regexp-in-string "</samp>" "=" content))
+ (setq content (replace-regexp-in-string "<var\\([^>]*\\)>" "" content))
+ (setq content (replace-regexp-in-string "</var>" "" content))
  (setq content (replace-regexp-in-string "<div>" "=" content))
  (setq content (replace-regexp-in-string "</div>" "=" content))
+ (setq content (replace-regexp-in-string "<sup>" "" content))
+ (setq content (replace-regexp-in-string "</sup>" "" content))
  (setq content (replace-regexp-in-string "<pre>" "#+BEGIN_SRC\n" content))
  (setq content (replace-regexp-in-string "</pre>" "\n#+END_SRC" content))
  (setq content (replace-regexp-in-string "<blockquote>" "#+BEGIN_QUOTE\n" content))
  (setq content (replace-regexp-in-string "</blockquote>" "\n#+END_QUOTE" content))
  (setq content (replace-regexp-in-string "<br>" "\n" content))
+ (setq content (replace-regexp-in-string "<br/>" "\n" content))
  (setq content (replace-regexp-in-string "<br\s/>" "\n" content))
  ;; transforming links
  (with-temp-buffer 
@@ -382,7 +401,10 @@ Currently this function is not needed/used."
 	      (text (match-string 3))
 	      (text (replace-regexp-in-string "[\n\t]" "" text))
 	      (text (replace-regexp-in-string "^[ \t]+" "" text)))
-	  (replace-match (format " [[%s][%s]]" url text) t t)))
+	  (when (not (string-match-p "#fn" url))
+	    (replace-match (format "[[%s][%s]]" url text) t t))
+	  (when (string-match-p "#fn" url)
+	    (replace-match (format " [fn:%s]" text) t t))))
       (goto-char (point-min))
       (while (re-search-forward "<a[\s\t].*+href=['\"]\\([^'\"]+\\)['\"][^>]*></a>" nil t)
 	  (replace-match "" t t))
@@ -457,6 +479,7 @@ Currently this function is not needed/used."
   (setq content (replace-regexp-in-string "&ldquo;" "\"" content))
   (setq content (replace-regexp-in-string "&rdquo;" "\"" content))
   (setq content (replace-regexp-in-string "&rsquo;" "'" content))
+  (setq content (replace-regexp-in-string "\\u2019s" "'" content))
   (setq content (replace-regexp-in-string "&#x27;" "'" content))
   (setq content (replace-regexp-in-string "&#39;" "'" content))
   (setq content (replace-regexp-in-string "&nbsp;" " " content))
@@ -504,9 +527,8 @@ Currently this function is not needed/used."
 ;; no empty lines that just start with \  
     (setq content (replace-regexp-in-string "[\\]*$" "" content)) 
 ;; no empty lines that just start with * 
-    (setq content (replace-regexp-in-string "[\*]* $" "" content))
-;; no empty lines that just start with *  
-    (setq content (replace-regexp-in-string "* $" "" content))
+    (setq content (replace-regexp-in-string "[\*>]* $" "" content))
+    (setq content (replace-regexp-in-string "[\*>]*$" "" content))
 ;; no new line starts with a space
     (setq content (replace-regexp-in-string "^\s*" "" content)) 
 ;; no more than one space 
@@ -517,13 +539,14 @@ Currently this function is not needed/used."
     (setq content (replace-regexp-in-string "\n\\{2,\\}" "\n\n" content))
 ;; proper italics
     (setq content (replace-regexp-in-string " \/$" "/" content))
+;; proper italics for links
+    (setq content (replace-regexp-in-string " \/ \\[\\[" " /[[" content))
 ;; no empty line before END_SRC
     (setq content (replace-regexp-in-string "^\n#\\+END_SRC" "#+END_SRC" content))
 ;; no empty line before END_QUOTE
     (setq content (replace-regexp-in-string "^\n#\\+END_QUOTE" "#+END_QUOTE" content))
 ;; no empty line after BEGIN_QUOTE
-    (setq content (replace-regexp-in-string "^#\\+BEGIN_QUOTE\n" "#+BEGIN_QUOTE" content))
-;; no empty lines in a list
+    (setq content (replace-regexp-in-string "^#\\+BEGIN_QUOTE\n^\n" "#+BEGIN_QUOTE" content))
 ;; remains a TODO
     (with-temp-buffer
       (insert content)
