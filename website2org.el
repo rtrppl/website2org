@@ -213,7 +213,8 @@ website2org-url-to-org. Results will be presented in a buffer."
 	    (setq case (replace-regexp-in-string "<code[^>]*>" "" case))
 	    (setq case (replace-regexp-in-string "</code>" "" case))
 	    (setq processed-content (concat processed-content "\n\n" case "\n\n")))
-	  (when (string-match-p "<img[\s>]" case)
+	  (when (and (string-match-p "<img[\s>]" case)
+		     (not (string-match-p "<a " case)))
 	    (setq processed-content (concat processed-content "\n\n" case "\n\n")))
 	  (when (and (string-match-p "<p[\s>]" case)
 		     (not (string-match-p "<img" case))
@@ -349,8 +350,8 @@ Currently this function is not needed/used."
  (setq content (replace-regexp-in-string "</strong>" "__** " content))
  (setq content (replace-regexp-in-string "\s*__\\*\\*" "**" content))
  (setq content (replace-regexp-in-string "\\*\\*\s," "**, " content))
- (setq content (replace-regexp-in-string "<b>" "" content))
- (setq content (replace-regexp-in-string "</b>" "" content))
+ (setq content (replace-regexp-in-string "<b>" "*" content))
+ (setq content (replace-regexp-in-string "</b>" "*" content))
  (setq content (replace-regexp-in-string "<i>" "" content))
  (setq content (replace-regexp-in-string "</i>" "" content))
  (setq content (replace-regexp-in-string "<kbd>" "~" content))
@@ -363,6 +364,8 @@ Currently this function is not needed/used."
  (setq content (replace-regexp-in-string "</header>" "" content))
  (setq content (replace-regexp-in-string "<center>" "" content))
  (setq content (replace-regexp-in-string "</center>" "" content))
+ (setq content (replace-regexp-in-string "<tt>" "" content))
+ (setq content (replace-regexp-in-string "</tt>" "" content))
  (setq content (replace-regexp-in-string "<aside>" "" content))
  (setq content (replace-regexp-in-string "</aside>" "\n" content))
  (setq content (replace-regexp-in-string "<ul>" "" content))
@@ -377,6 +380,7 @@ Currently this function is not needed/used."
  (setq content (replace-regexp-in-string "</code>" "=" content))
  (setq content (replace-regexp-in-string "<samp\\([^>]*\\)>" "=" content))
  (setq content (replace-regexp-in-string "</samp>" "=" content))
+ (setq content (replace-regexp-in-string "<source\\([^>]*\\)>" "=" content))
  (setq content (replace-regexp-in-string "<var\\([^>]*\\)>" "" content))
  (setq content (replace-regexp-in-string "</var>" "" content))
  (setq content (replace-regexp-in-string "<div>" "=" content))
@@ -400,6 +404,7 @@ Currently this function is not needed/used."
 	      (url (replace-regexp-in-string "^#" "*" url))
 	      (text (match-string 3))
 	      (text (replace-regexp-in-string "[\n\t]" "" text))
+	      (text (replace-regexp-in-string "=" " " text)) ; removed because of fontification glitch
 	      (text (replace-regexp-in-string "^[ \t]+" "" text)))
 	  (when (not (string-match-p "#fn" url))
 	    (replace-match (format "[[%s][%s]]" url text) t t))
@@ -501,7 +506,7 @@ Currently this function is not needed/used."
 
 (defun website2org-cleanup-org (content)
   "Final clean-up of the Orgmode content."
-    (with-temp-buffer
+  (with-temp-buffer
       (insert content)
       (goto-char (point-min))
 ;; This was something Pandoc did a lot. Perhaps not necessary anymore.
@@ -530,18 +535,19 @@ Currently this function is not needed/used."
 ;; no empty lines that just start with \  
     (setq content (replace-regexp-in-string "[\\]*$" "" content)) 
 ;; no empty lines that just start with * 
-    (setq content (replace-regexp-in-string "[\*>]* $" "" content))
-    (setq content (replace-regexp-in-string "[\*>]*$" "" content))
+    (setq content (replace-regexp-in-string "^[\*>]* $" "" content))
+    (setq content (replace-regexp-in-string "^[\*>]*$" "" content))
 ;; no new line starts with a space
     (setq content (replace-regexp-in-string "^\s*" "" content)) 
 ;; no more than one space 
     (setq content (replace-regexp-in-string "\s\\{2,\\}" "\s" content))
-;; no empty lines that just start with - 
+;; no empty lines that just start with - or = 
     (setq content (replace-regexp-in-string "^- $\\|^-$" "" content))
+    (setq content (replace-regexp-in-string "^= $\\|^=$" "" content))
 ;; no more than one empty line
     (setq content (replace-regexp-in-string "\n\\{2,\\}" "\n\n" content))
 ;; proper italics
-    (setq content (replace-regexp-in-string " \/$" "/" content))
+    (setq content (replace-regexp-in-string " \/[ ]*$" "/" content))
 ;; proper italics for links
     (setq content (replace-regexp-in-string " \/ \\[\\[" " /[[" content))
 ;; no empty line before END_SRC
