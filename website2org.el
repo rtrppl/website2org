@@ -381,7 +381,7 @@ Currently this function is not needed/used."
  (setq content (replace-regexp-in-string "</var>" "" content))
  (setq content (replace-regexp-in-string "<div>" "=" content))
  (setq content (replace-regexp-in-string "</div>" "=" content))
- (setq content (replace-regexp-in-string "<sup>" "" content))
+ (setq content (replace-regexp-in-string "<sup\\([^>]*\\)>" "" content))
  (setq content (replace-regexp-in-string "</sup>" "" content))
  (setq content (replace-regexp-in-string "<pre>" "#+BEGIN_SRC\n" content))
  (setq content (replace-regexp-in-string "</pre>" "\n#+END_SRC" content))
@@ -474,6 +474,9 @@ Currently this function is not needed/used."
 (defun website2org-cleanup-org-weird-characters (content)
   "Cleaning-up weird characters in the Orgmode content."
   (setq content (replace-regexp-in-string "&quot;" "\"" content))
+  (setq content (replace-regexp-in-string "&#91;" "[" content))
+  (setq content (replace-regexp-in-string "&#93;" "]" content))
+  (setq content (replace-regexp-in-string "&copy;" "©" content))
   (setq content (replace-regexp-in-string "&mdash;" "—" content))
   (setq content (replace-regexp-in-string "&mldr;" "..." content))
   (setq content (replace-regexp-in-string "&ldquo;" "\"" content))
@@ -546,7 +549,7 @@ Currently this function is not needed/used."
 ;; no empty line before END_QUOTE
     (setq content (replace-regexp-in-string "^\n#\\+END_QUOTE" "#+END_QUOTE" content))
 ;; no empty line after BEGIN_QUOTE
-    (setq content (replace-regexp-in-string "^#\\+BEGIN_QUOTE\n^\n" "#+BEGIN_QUOTE" content))
+    (setq content (replace-regexp-in-string "^#\\+BEGIN_QUOTE\n\n" "#+BEGIN_QUOTE\n" content))
 ;; remains a TODO
     (with-temp-buffer
       (insert content)
