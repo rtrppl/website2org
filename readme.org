@@ -27,6 +27,9 @@ Still, there are some known issues even with otherwise working websites. Orgmode
 
 ** Change log
 
+*0.2.5*
+- Improved substitution for HTML character entities; eliminates <small> and <abbr> from the Orgmode buffer
+
 *0.2.4*
 - More fixes (+ support for some footnotes)
 

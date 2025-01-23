@@ -4,7 +4,7 @@
 
 ;; Maintainer: René Trappel <rtrappel@gmail.com>
 ;; URL: https://github.com/rtrppl/website2org
-;; Version: 0.2.4
+;; Version: 0.2.5
 ;; Package-Requires: ((emacs "26"))
 ;; Keywords: comm
 
@@ -28,6 +28,10 @@
 ;; website2org.el allows to turn any website into a minimal orgmode
 ;; buffer or .org file.
 ;; 
+;; 0.2.5
+;; - Improved substitution for HTML character entities; removed <small>
+;; and <abbr> 
+;;
 ;; 0.2.4
 ;; - More fixes (+ support for some footnotes)
 ;;
@@ -60,6 +64,7 @@
 ;;; Code:
 
 (require 'org)
+(require 'xml)
 
 (defvar website2org-wget-cmd "wget -q ")
 (defvar website2org-cache-filename "~/website2org-cache.html")
@@ -144,7 +149,6 @@ website2org-url-to-org. Results will be presented in a buffer."
  (let ((window (get-buffer-window buffer)))
    (select-window window)
    (goto-char (point-min))
-   (org-next-visible-heading 1)
    (deactivate-mark)))
 
 (defun website2org-create-local-cache-file (URL)
@@ -307,6 +311,10 @@ website2org-url-to-org. Results will be presented in a buffer."
   (setq content (replace-regexp-in-string "<div\\([^>]*\\)>" "" content))
   (setq content (replace-regexp-in-string "<meta[^>]*>" "" content))
   (setq content (replace-regexp-in-string "</meta\\([^>]*\\)>" "" content))
+  (setq content (replace-regexp-in-string "<small[^>]*>" "" content))
+  (setq content (replace-regexp-in-string "</small\\([^>]*\\)>" "" content))
+  (setq content (replace-regexp-in-string "<abbr[^>]*>" "" content))
+  (setq content (replace-regexp-in-string "</abbr\\([^>]*\\)>" "" content))
   (setq content (replace-regexp-in-string "<svg\\([^>]*\\)>" "" content))
   (setq content (replace-regexp-in-string "</svg\\([^>]*\\)>" "" content))
   (setq content (replace-regexp-in-string "<button\\([^>]*\\)>" "" content))
@@ -490,6 +498,7 @@ Currently this function is not needed/used."
   (setq content (replace-regexp-in-string "&ldquo;" "\"" content))
   (setq content (replace-regexp-in-string "&rdquo;" "\"" content))
   (setq content (replace-regexp-in-string "&rsquo;" "'" content))
+  (setq content (replace-regexp-in-string "&lsquo;" "'" content))
   (setq content (replace-regexp-in-string "\\u2019s" "'" content))
   (setq content (replace-regexp-in-string "&#x27;" "'" content))
   (setq content (replace-regexp-in-string "&#39;" "'" content))
@@ -505,7 +514,8 @@ Currently this function is not needed/used."
   (setq content (replace-regexp-in-string "&bull;" "•" content))
   (setq content (replace-regexp-in-string " " " " content))
   (setq content (replace-regexp-in-string "&amp;" "&" content))
-  (setq content (replace-regexp-in-string "&#\\(?:8217\\|039\\);" "’" content)))
+  (setq content (replace-regexp-in-string "&#\\(?:8217\\|039\\);" "’" content))
+  (setq content (xml-substitute-special content)))
 
 (defun website2org-cleanup-org (content)
   "Final clean-up of the Orgmode content."
