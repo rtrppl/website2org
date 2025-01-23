@@ -4,7 +4,7 @@
 
 ;; Maintainer: René Trappel <rtrappel@gmail.com>
 ;; URL: https://github.com/rtrppl/website2org
-;; Version: 0.2.5
+;; Version: 0.2.6
 ;; Package-Requires: ((emacs "26"))
 ;; Keywords: comm
 
@@ -28,6 +28,10 @@
 ;; website2org.el allows to turn any website into a minimal orgmode
 ;; buffer or .org file.
 ;; 
+;; 0.2.6
+;; - <mark> now is handled as *; improved punctuation for sentences with
+;; strong, i.e. *
+;;
 ;; 0.2.5
 ;; - Improved substitution for HTML character entities; removed <small>
 ;; and <abbr> 
@@ -313,6 +317,8 @@ website2org-url-to-org. Results will be presented in a buffer."
   (setq content (replace-regexp-in-string "</meta\\([^>]*\\)>" "" content))
   (setq content (replace-regexp-in-string "<small[^>]*>" "" content))
   (setq content (replace-regexp-in-string "</small\\([^>]*\\)>" "" content))
+  (setq content (replace-regexp-in-string "<mark[^>]*>" "*" content))
+  (setq content (replace-regexp-in-string "</mark\\([^>]*\\)>" "*" content))
   (setq content (replace-regexp-in-string "<abbr[^>]*>" "" content))
   (setq content (replace-regexp-in-string "</abbr\\([^>]*\\)>" "" content))
   (setq content (replace-regexp-in-string "<svg\\([^>]*\\)>" "" content))
@@ -544,6 +550,7 @@ Currently this function is not needed/used."
       (setq content (buffer-substring-no-properties (point-min)(point-max))))
 ;; proper punctuation  
     (setq content (replace-regexp-in-string "/\s\\([,;.:!?)]\\)" "/\\1" content)) 
+    (setq content (replace-regexp-in-string "\\*\s\\([,;.:!?)]\\)" "*\\1" content))
     (setq content (replace-regexp-in-string "\\([(]\\)\s/" "\\1/" content))
 ;; no empty lines that just start with \  
     (setq content (replace-regexp-in-string "[\\]*$" "" content)) 
@@ -563,6 +570,8 @@ Currently this function is not needed/used."
     (setq content (replace-regexp-in-string " \/[ ]*$" "/" content))
 ;; proper italics for links
     (setq content (replace-regexp-in-string " \/ \\[\\[" " /[[" content))
+;; proper strong
+    (setq content (replace-regexp-in-string "\\*\\*" "*" content))
 ;; no empty line before END_SRC
     (setq content (replace-regexp-in-string "^\n#\\+END_SRC" "#+END_SRC" content))
 ;; no empty line before END_QUOTE
