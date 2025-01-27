@@ -4,7 +4,7 @@
 
 ;; Maintainer: René Trappel <rtrappel@gmail.com>
 ;; URL: https://github.com/rtrppl/website2org
-;; Version: 0.2.6
+;; Version: 0.2.7
 ;; Package-Requires: ((emacs "26"))
 ;; Keywords: comm
 
@@ -27,6 +27,10 @@
 
 ;; website2org.el allows to turn any website into a minimal orgmode
 ;; buffer or .org file.
+;;
+;; 0.2.7
+;; - Added support for `elfeed-show-mode' + added minor mode for 
+;; `website2org-temp' (press "q" to exit)
 ;; 
 ;; 0.2.6
 ;; - <mark> now is handled as *; improved punctuation for sentences with
@@ -69,6 +73,7 @@
 
 (require 'org)
 (require 'xml)
+(require 'shr)
 
 (defvar website2org-wget-cmd "wget -q ")
 (defvar website2org-cache-filename "~/website2org-cache.html")
@@ -89,6 +94,7 @@ website2org-url-to-org. Creates an org-file in website2org-directory."
   (interactive)
   (let ((url (or 
               (thing-at-point-url-at-point)
+	      (get-text-property (point) 'shr-url)
               (org-element-property :raw-link (org-element-context))
               (read-string "Please enter a URL: "))))
     (website2org-url-to-org url)))
@@ -99,6 +105,7 @@ website2org-url-to-org. Results will be presented in a buffer."
   (interactive)
   (let ((url (or 
               (thing-at-point-url-at-point)
+	      (get-text-property (point) 'shr-url)
               (org-element-property :raw-link (org-element-context))
               (read-string "Please enter a URL: "))))
     (website2org-to-buffer url)))
@@ -129,7 +136,7 @@ website2org-url-to-org. Results will be presented in a buffer."
     (goto-char (point-min)))))
 
 
-(defun website2org-to-buffer (url)
+(defun website2org-to-buffer (url &optional dummy)
   "Creates an Orgmode buffer from an URL."
   (with-temp-buffer
     (website2org-create-local-cache-file url)
@@ -153,7 +160,15 @@ website2org-url-to-org. Results will be presented in a buffer."
  (let ((window (get-buffer-window buffer)))
    (select-window window)
    (goto-char (point-min))
-   (deactivate-mark)))
+   (deactivate-mark)
+   (website2org-temp-buffer-mode)))
+
+(define-minor-mode website2org-temp-buffer-mode
+  "A minor mode for the `website2org-temp' buffer."
+  :lighter " website2org-temp-buffer-mode"
+  :keymap (let ((map (make-sparse-keymap)))
+            (define-key map (kbd "q") (lambda () (interactive) (kill-buffer (current-buffer))))
+            map))
 
 (defun website2org-create-local-cache-file (URL)
   "Uses wget to download a website into a local cache file."
