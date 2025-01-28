@@ -7,7 +7,7 @@
 
 *website2org.el* downloads a website, transforms it into minimalist Orgmode, and presents the results as either a temporary Orgmode buffer or creates an .org file in a specified directory.
 
-I have two primary uses cases for this. 1) Local storage/read it later: I often store websites locally to link them (and specific paragraphs) to my Zettelkasten in [[https://github.com/rtrppl/orgrr][orgrr]]. (They are downloaded to the directory "findings", an orgrr container, and the tag "orgrr-project" is automatically added. See orgrr for details.) 2) To quickly see the contents of a website in [[https://codeberg.org/martianh/mastodon.el][mastodon.el]]. 
+I have now three primary uses cases for this. 1) Local storage/read it later: I often store websites locally to link them (and specific paragraphs) to my Zettelkasten in [[https://github.com/rtrppl/orgrr][orgrr]]. (They are downloaded to the directory "findings", an orgrr container, and the tag "orgrr-project" is automatically added. See orgrr for details.) 2) To quickly see the contents of a website in [[https://codeberg.org/martianh/mastodon.el][mastodon.el]]. 3) Loading full articles in Elfeed (see below).
 
 This package is still in an early stage. I use it to replace =orgrr-save-website=, which draws on =org-web-tools--eww-readable= and =org-web-tools--html-to-org-with-pandoc= but has become more fragile by the day. =orgrr-save-website= also often does struggle to produce the kind of Orgmode I want to have - with as little HTML fragments as possible. 
 
@@ -123,3 +123,35 @@ Additionally you can set these values:
 These are the primary functions of website2org.el:
 
 =website2org= will download the website at point (or from a provided URL) and save it as an Orgmode file. =website2org-temp= will download a website at point (or from a provided URL) and present it as a temporary Orgmode buffer (press "q" to exit the screen).
+
+** Elfeed
+
+I wrote a small integration for [[https://github.com/skeeto/elfeed][Elfeed]] (based on =elfeed-show-visit=), which may also be of interest for some:
+
+#+begin_src elisp
+(defun elfeed-show-visit-website2org (&optional use-generic-p)
+  "Visit the current entry in website2org using `browse-url'.
+If there is a prefix argument, visit the current entry in the
+browser defined by `browse-url-generic-program'."
+  (interactive "P")
+  (let ((link (elfeed-entry-link elfeed-show-entry)))
+    (when link
+      (message "Sent to browser: %s" link)
+      (if use-generic-p
+          (website2org-to-buffer link)
+        (website2org-to-buffer link)))))
+#+end_src
+
+If you now add a keybinding you are able to open the current entry in a temporary website2org buffer (which can be closed by pressing "q").
+
+My Elfeed setup basically looks like this:
+
+#+begin_src elisp
+(use-package elfeed
+	:defer t
+	:bind
+	(:map global-map
+	      ("C-x w" . elfeed))
+	(:map elfeed-show-mode-map
+	      ("w" . elfeed-show-visit-website2org)))
+#+end_src
