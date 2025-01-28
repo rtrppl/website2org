@@ -140,7 +140,7 @@ I wrote a small integration for [[https://github.com/skeeto/elfeed][Elfeed]] (ba
         (website2org-to-buffer link)))))
 #+end_src
 
-If you now add a keybinding you are able to open the current entry in a temporary website2org buffer (which can be closed by pressing "q").
+By adding a keybinding you are able to quickly open the current entry in a temporary website2org buffer (which can be closed by pressing "q").
 
 My Elfeed setup basically looks like this:
 
