@@ -130,9 +130,7 @@ I wrote a small integration for [[https://github.com/skeeto/elfeed][Elfeed]] (ba
 
 #+begin_src elisp
 (defun elfeed-show-visit-website2org (&optional use-generic-p)
-  "Visit the current entry in website2org using `browse-url'.
-If there is a prefix argument, visit the current entry in the
-browser defined by `browse-url-generic-program'."
+  "Visit the current entry in website2org using `browse-url'."
   (interactive "P")
   (let ((link (elfeed-entry-link elfeed-show-entry)))
     (when link
