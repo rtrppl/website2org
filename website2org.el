@@ -4,7 +4,7 @@
 
 ;; Maintainer: René Trappel <rtrappel@gmail.com>
 ;; URL: https://github.com/rtrppl/website2org
-;; Version: 0.2.7
+;; Version: 0.2.8
 ;; Package-Requires: ((emacs "26"))
 ;; Keywords: comm
 
@@ -27,6 +27,9 @@
 
 ;; website2org.el allows to turn any website into a minimal orgmode
 ;; buffer or .org file.
+;;
+;; 0.2.8
+;; - Added option to press the spacevar to scroll in `website2org-temp' 
 ;;
 ;; 0.2.7
 ;; - Added support for `elfeed-show-mode' + added minor mode for 
@@ -110,7 +113,7 @@ website2org-url-to-org. Results will be presented in a buffer."
               (read-string "Please enter a URL: "))))
     (website2org-to-buffer url)))
 
-(defun website2org-url-to-org (url)
+(defun website2org-url-to-org (url &optional dummy)
  "Creates an Orgmode document from an URL."
  (with-temp-buffer
   (website2org-create-local-cache-file url)
@@ -168,6 +171,7 @@ website2org-url-to-org. Results will be presented in a buffer."
   :lighter " website2org-temp-buffer-mode"
   :keymap (let ((map (make-sparse-keymap)))
             (define-key map (kbd "q") (lambda () (interactive) (kill-buffer (current-buffer))))
+	    (define-key map (kbd "SPC") 'scroll-up-command)
             map))
 
 (defun website2org-create-local-cache-file (URL)

@@ -27,6 +27,9 @@ Still, there are some known issues even with otherwise working websites. Orgmode
 
 ** Change log
 
+*0.2.8*
+- Added option to press the spacevar to scroll in =website2org-temp= + added option to call =website-url-to-org= from Elfeed (see below)
+
 *0.2.7*
 - Added support for =elfeed-show-mode= (and other non-Orgmode URLs in documents) + added minor mode for =website2org-temp= (press "q" to exit)
 
@@ -130,13 +133,15 @@ I wrote a small integration for [[https://github.com/skeeto/elfeed][Elfeed]] (ba
 
 #+begin_src elisp
 (defun elfeed-show-visit-website2org (&optional use-generic-p)
-  "Visit the current entry in website2org using `browse-url'."
+  "Visit the current entry in a website2org temporary buffer.
+Calling this function with C-u will use website2org-url-to buffer
+to create an orgmode document."
   (interactive "P")
   (let ((link (elfeed-entry-link elfeed-show-entry)))
     (when link
       (message "Sent to browser: %s" link)
       (if use-generic-p
-          (website2org-to-buffer link)
+          (website2org-url-to-org link)
         (website2org-to-buffer link)))))
 #+end_src
 
