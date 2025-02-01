@@ -28,7 +28,7 @@ Still, there are some known issues even with otherwise working websites. Orgmode
 ** Change log
 
 *0.2.8*
-- Added option to press the spacevar to scroll in =website2org-temp= + added option to call =website-url-to-org= from Elfeed (see below)
+- Added option to press the spacebar to scroll in =website2org-temp= + added option to call =website-url-to-org= from Elfeed (see below)
 
 *0.2.7*
 - Added support for =elfeed-show-mode= (and other non-Orgmode URLs in documents) + added minor mode for =website2org-temp= (press "q" to exit)
@@ -125,7 +125,7 @@ Additionally you can set these values:
 
 These are the primary functions of website2org.el:
 
-=website2org= will download the website at point (or from a provided URL) and save it as an Orgmode file. =website2org-temp= will download a website at point (or from a provided URL) and present it as a temporary Orgmode buffer (press "q" to exit the screen).
+=website2org= will download the website at point (or from a provided URL) and save it as an Orgmode file. =website2org-temp= will download a website at point (or from a provided URL) and present it as a temporary Orgmode buffer (press "q" to exit the screen; press "spacebar" to scroll).
 
 ** Elfeed
 
@@ -145,7 +145,7 @@ to create an orgmode document."
         (website2org-to-buffer link)))))
 #+end_src
 
-By adding a keybinding you are able to quickly open the current entry in a temporary website2org buffer (which can be closed by pressing "q").
+By adding a keybinding you are able to quickly open the current entry in a temporary website2org buffer.
 
 My Elfeed setup basically looks like this:
 
