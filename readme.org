@@ -27,47 +27,16 @@ Still, there are some known issues even with otherwise working websites. Orgmode
 
 ** Change log
 
+*0.2.9*
+- Ensured that there is at least one space between a word and a link
+
 *0.2.8*
 - Added option to press the spacebar to scroll in =website2org-temp= + added option to call =website-url-to-org= from Elfeed (see below)
 
 *0.2.7*
 - Added support for =elfeed-show-mode= (and other non-Orgmode URLs in documents) + added minor mode for =website2org-temp= (press "q" to exit)
 
-*0.2.6*
-- =<mark>= now is handled as *strong*; improved punctuation for sentences with *strong*
-
-*0.2.5*
-- Improved substitution for HTML character entities; eliminates <small> and <abbr> from the Orgmode buffer
-
-*0.2.4*
-- More fixes (+ support for some footnotes)
-
-*0.2.3*
-- Improved handling of <footer> tag + some more fixes
-
-*0.2.2*
-- Improved support for many sites with code blocks
-
-*0.2.1*
-- Added support for images
-
-*0.2.0*
-- Added option to send downloaded URL to a web archive
-
-*0.1.4*
-- several small fixes; several links in one line are now correctly dealt with
-
-*0.1.3*
-- Bug fixes for the case when there is no <h1> tag; more parsing  
-
-*0.1.2*
-- Further improvements to parsing
-
-*0.1.1*
-- Added <ol> and removed <input> and <time>
-
-*0.1*
-- first public version
+See also the [[./changelog.org][changelog]].
 
 ** Installation
 

@@ -4,7 +4,7 @@
 
 ;; Maintainer: René Trappel <rtrappel@gmail.com>
 ;; URL: https://github.com/rtrppl/website2org
-;; Version: 0.2.8
+;; Version: 0.2.9
 ;; Package-Requires: ((emacs "26"))
 ;; Keywords: comm
 
@@ -27,6 +27,10 @@
 
 ;; website2org.el allows to turn any website into a minimal orgmode
 ;; buffer or .org file.
+;;
+;; 0.2.9
+;; - Ensured that there is at least one space between a word and a 
+;; link
 ;;
 ;; 0.2.8
 ;; - Added option to press the spacevar to scroll in `website2org-temp' 
@@ -302,6 +306,7 @@ website2org-url-to-org. Results will be presented in a buffer."
   (setq content (replace-regexp-in-string "<em\s\\([^>]*\\)>" "<em>" content))
   (setq content (replace-regexp-in-string "<i\s\\([^>]*\\)>" "<i>" content))
   (setq content (replace-regexp-in-string "\\(<figure[\s>]\\)\\s-*\\([^\0]+?\\)\\(</figure>\\)" "" content))
+  (setq content (replace-regexp-in-string "[\s =]*<script.*</script>[\s=]*" "" content))
   (setq content (replace-regexp-in-string "\\(<include-fragment[\s>]\\)\\s-*\\([^\0]+?\\)\\(</include-fragment>\\)" "" content))
   (setq content (replace-regexp-in-string "<h1\\([^>]*\\)>" "<h1>" content))
   (setq content (replace-regexp-in-string "<h2\\([^>]*\\)>" "<h2>" content))
@@ -571,6 +576,8 @@ Currently this function is not needed/used."
     (setq content (replace-regexp-in-string "/\s\\([,;.:!?)]\\)" "/\\1" content)) 
     (setq content (replace-regexp-in-string "\\*\s\\([,;.:!?)]\\)" "*\\1" content))
     (setq content (replace-regexp-in-string "\\([(]\\)\s/" "\\1/" content))
+;; always at least one space before links
+    (setq content (replace-regexp-in-string "\\([^ ]\\)\\[\\[" "\\1 [[" content))
 ;; no empty lines that just start with \  
     (setq content (replace-regexp-in-string "[\\]*$" "" content)) 
 ;; no empty lines that just start with * 
