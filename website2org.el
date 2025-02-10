@@ -129,9 +129,10 @@ website2org-url-to-org. Results will be presented in a buffer."
 	 (final))
     (when website2org-archive
       (shell-command (concat "open " website2org-archive-url url)))
-    (setq filename (replace-regexp-in-string "[\"\|',:;\s\\\/]" "_" title))
+    (setq filename (replace-regexp-in-string "[\"\|',.:;?\s\\\/]" "_" title))
     (when (> (length filename) 100)
 	  (setq filename (substring title 0 100)))
+    (setq filename (replace-regexp-in-string "_\\{2,\\}" "_" filename))
     (setq filename (concat website2org-directory time "-" filename))
     (website2org-delete-local-cache-file)
     (find-file (concat filename ".org"))
@@ -577,7 +578,7 @@ Currently this function is not needed/used."
     (setq content (replace-regexp-in-string "\\*\s\\([,;.:!?)]\\)" "*\\1" content))
     (setq content (replace-regexp-in-string "\\([(]\\)\s/" "\\1/" content))
 ;; always at least one space before links
-    (setq content (replace-regexp-in-string "\\([^ ]\\)\\[\\[" "\\1 [[" content))
+    (setq content (replace-regexp-in-string "\\([^ \(]\\)\\[\\[" "\\1 [[" content))
 ;; no empty lines that just start with \  
     (setq content (replace-regexp-in-string "[\\]*$" "" content)) 
 ;; no empty lines that just start with * 
