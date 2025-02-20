@@ -4,7 +4,7 @@
 
 ;; Maintainer: René Trappel <rtrappel@gmail.com>
 ;; URL: https://github.com/rtrppl/website2org
-;; Version: 0.2.9
+;; Version: 0.2.10
 ;; Package-Requires: ((emacs "26"))
 ;; Keywords: comm
 
@@ -27,6 +27,9 @@
 
 ;; website2org.el allows to turn any website into a minimal orgmode
 ;; buffer or .org file.
+;;
+;; 0.2.10 
+;; - Improved handling of HTML tags in links
 ;;
 ;; 0.2.9
 ;; - Ensured that there is at least one space between a word and a 
@@ -220,6 +223,17 @@ website2org-url-to-org. Results will be presented in a buffer."
 		 (replacement (replace-regexp-in-string "<code[^>]*>" "" replacement))
 		 (replacement (replace-regexp-in-string "</code>" "" replacement)))
 	    (replace-match replacement t t))))
+;; dealing with formated links that break paragraphs
+      (goto-char (point-min))
+      (while (re-search-forward "\\(<a\\)\\s-*\\([^\0]+?\\)\\(</a>\\)" nil t)
+	(when (match-string 0)
+	  (let* ((replacement (replace-regexp-in-string "<u[^>]*>" " " (match-string 0)))
+		 (replacement (replace-regexp-in-string "</u>" "" replacement))
+		 (replacement (replace-regexp-in-string "<em[^>]*>" "/" replacement))
+		 (replacement (replace-regexp-in-string "</em>" "/" replacement))
+		 (replacement (replace-regexp-in-string "<strong[^>]*>" "" replacement))
+		 (replacement (replace-regexp-in-string "</strong>" "" replacement)))
+	    (replace-match replacement t t))))
       (goto-char (point-min))
       (while (re-search-forward "\\(<p[\s>]\\|<blockquote\\|<pre\\|<h1\\|<h2\\|<h3\\|<li[\s>]\\|<title\\|<img\\)\\s-*\\([^\0]+?\\)\\(</p>\\|</blockquote>\\|</pre>\\|</h1>\\|</h2>\\|</h3>\\|</ul>\\|</ol>\\|</li>\\|</title>\\|</img>\\)" nil t)
 	(when (match-string 0)
@@ -380,26 +394,30 @@ Currently this function is not needed/used."
    
 (defun website2org-html-to-org (content og-url)
   "Turns the filtered HTML content into clean Orgmode content."
- (setq content (replace-regexp-in-string "<h1>" "* " content))
- (setq content (replace-regexp-in-string "</h1>" "" content))
- (setq content (replace-regexp-in-string "<h2>" "** " content))
- (setq content (replace-regexp-in-string "</h2>" "" content))
- (setq content (replace-regexp-in-string "<h3>" "*** " content))
- (setq content (replace-regexp-in-string "</h3>" "" content))
  (setq content (replace-regexp-in-string "<p>" "" content))
  (setq content (replace-regexp-in-string "</p>" "\n" content))
  (setq content (replace-regexp-in-string "<strong>" "**" content))
  (setq content (replace-regexp-in-string "</strong>" "__** " content))
  (setq content (replace-regexp-in-string "\s*__\\*\\*" "**" content))
  (setq content (replace-regexp-in-string "\\*\\*\s," "**, " content))
- (setq content (replace-regexp-in-string "<b>" "*" content))
- (setq content (replace-regexp-in-string "</b>" "*" content))
+ (setq content (replace-regexp-in-string "<b>" "**" content))
+ (setq content (replace-regexp-in-string "</b>" "**" content))
  (setq content (replace-regexp-in-string "<i>" "" content))
  (setq content (replace-regexp-in-string "</i>" "" content))
  (setq content (replace-regexp-in-string "<kbd>" "~" content))
  (setq content (replace-regexp-in-string "</kbd>" "~" content))
  (setq content (replace-regexp-in-string "<em>" " /" content))
  (setq content (replace-regexp-in-string "</em>" "/ " content))
+ (setq content (replace-regexp-in-string "\\*\\* \/" " **/" content))
+ (setq content (replace-regexp-in-string "\/ \\*\\*" "/** " content))
+ (setq content (replace-regexp-in-string "<h1>" "* " content))
+ (setq content (replace-regexp-in-string "</h1>" "" content))
+ (setq content (replace-regexp-in-string "<h2>" "** " content))
+ (setq content (replace-regexp-in-string "</h2>" "" content))
+ (setq content (replace-regexp-in-string "<h3>" "*** " content))
+ (setq content (replace-regexp-in-string "</h3>" "" content))
+ (setq content (replace-regexp-in-string "<u>" "" content)) ;; no support for U because it messes with org-links
+ (setq content (replace-regexp-in-string "</u>" "" content))
  (setq content (replace-regexp-in-string "<cite\\([^>]*\\)>" " /" content))
  (setq content (replace-regexp-in-string "</cite>" "/ " content))
  (setq content (replace-regexp-in-string "<header>" "" content))
@@ -425,8 +443,8 @@ Currently this function is not needed/used."
  (setq content (replace-regexp-in-string "<source\\([^>]*\\)>" "=" content))
  (setq content (replace-regexp-in-string "<var\\([^>]*\\)>" "" content))
  (setq content (replace-regexp-in-string "</var>" "" content))
- (setq content (replace-regexp-in-string "<div>" "=" content))
- (setq content (replace-regexp-in-string "</div>" "=" content))
+ (setq content (replace-regexp-in-string "<div>" "" content))
+ (setq content (replace-regexp-in-string "</div>" "" content))
  (setq content (replace-regexp-in-string "<sup\\([^>]*\\)>" "" content))
  (setq content (replace-regexp-in-string "</sup>" "" content))
  (setq content (replace-regexp-in-string "<pre>" "#+BEGIN_SRC\n" content))
@@ -597,6 +615,9 @@ Currently this function is not needed/used."
     (setq content (replace-regexp-in-string " \/[ ]*$" "/" content))
 ;; proper italics for links
     (setq content (replace-regexp-in-string " \/ \\[\\[" " /[[" content))
+    (setq content (replace-regexp-in-string "\\]\\[\/[ ]*" "][/" content))
+;; proper separatuion of links from italics or strong 
+    (setq content (replace-regexp-in-string "\]\]\\*" "]] *" content))
 ;; proper strong
     (setq content (replace-regexp-in-string "\\*\\*" "*" content))
 ;; no empty line before END_SRC

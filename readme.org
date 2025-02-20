@@ -23,9 +23,12 @@ website2org ignores all information before the first =<h1>= headline and everyth
 
 Parsing HTML with RegEx comes with lots of issues. Most experienced coders [[https://blog.codinghorror.com/parsing-html-the-cthulhu-way/][strongly advice against doing so]] for good reason. And there are numerous tools to parse HTML, there is even one [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Parsing-HTML_002fXML.html][built-in]] (=libxml-parse-html-region=, which eventually might the basis of a proper rewrite of this package). I also considered [[https://github.com/htacg/tidy-html5][tidy-html5]], hxclean of [[https://www.w3.org/Tools/HTML-XML-utils/README][html-xml-utils]] fame, and [[https://github.com/mgdm/htmlq][htmlq]]. All of these worked to some degree but stopped doing so when leaving the UTF-8 world. In other words, not a single one of them produced acceptable results for Chinese websites. Given the quality of the current solution, I don't see the pressing need to add such HTML parsing. website2org will work for most sites - the more they stick to common standards and behavior, the better are the chances. Right now we may be at 85-95% of websites working, with a 5% chance of some small issue (please report the obvious ones). 
 
-Still, there are some known issues even with otherwise working websites. Orgmode does not deal well with source blocks within quote blocks. These will look weird. 
+Still, there are some known issues even with otherwise working websites. Orgmode does not deal well with source blocks within quote blocks. These will look weird. Orgmode also sometimes has difficulties in dealing with two formatting styles for the same string. Bold and italics at the same time may or may not work. 
 
 ** Change log
+
+*0.2.10*
+- Improved handling of HTML tags in links
 
 *0.2.9*
 - Ensured that there is at least one space between a word and a link
