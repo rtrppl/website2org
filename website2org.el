@@ -198,6 +198,66 @@ website2org-url-to-org. Results will be presented in a buffer."
   "Deletes the website2org local cache file."
   (delete-file website2org-cache-filename))
 
+(defun website2org-shr-cleanup-rendering (content)
+  "Using `shr' for a first cleanup of the HTML." 
+  (let ((processed-content)
+	(dom))
+    (with-temp-buffer
+      (insert content)
+      (setq dom (libxml-parse-html-region (point-min) (point-max))))
+    (with-temp-buffer
+      (website2org-insert-dom dom)
+      (setq processed-content (buffer-substring-no-properties (point-min)(point-max))))
+    processed-content))
+
+(defun website2org-insert-dom (dom)
+  "Recursively insert a DOM tree as Orgmode."
+  (unless (stringp dom) ;; Ignore plain text nodes
+    (let ((tag (symbol-name (car dom)))  ;; Convert symbol to string
+          (attrs (cadr dom))
+          (children (cddr dom))
+          (attr-string ""))
+      ;; Construct attribute string manually
+      (dolist (attr attrs)
+        (setq attr-string (concat attr-string " " (symbol-name (car attr)) "=\"" (cdr attr) "\"")))
+
+      (when (not (or (string= tag "script")
+		     (string= tag "style")))
+
+	;; Insert opening tag with attributes
+	(insert "<" tag attr-string ">")
+
+      ;; Insert children
+      (dolist (child children)
+        (if (stringp child)
+	    (progn
+              (insert child)) ;; Print text node
+          (website2org-insert-dom child))) ;; Recursive call for nested elements
+
+      ;; Insert closing tag
+      (insert "</" tag ">\n")))))
+
+(defun website2org-to-buffer-test (url &optional dummy)
+  "Creates an Orgmode buffer from an URL using libxml."
+  (interactive)
+  (with-temp-buffer
+    (website2org-create-local-cache-file url)
+    (let* ((content (website2org-load-file website2org-cache-filename))
+	   (content (website2org-shr-cleanup-rendering content))
+	   (title (website2org-process-html content "title" url))
+	   (org-content (website2org-process-html content "content" url))
+	   (final))
+      (print content)
+      (website2org-delete-local-cache-file)
+    (setq final (concat "#+roam_key: " url "\n\n" org-content))
+    (setq final (concat "#+title: " title "\n" final))
+    (with-current-buffer (get-buffer-create "website2org-test")
+      (erase-buffer)
+      (switch-to-buffer "website2org-test")
+      (insert final)))
+  (website2org-prepare-findings-buffer "website2org-test")))
+
+
 (defun website2org-process-html (content what og-url)
   "Main function to transform html into minimal org."
   (let* ((processed-content)
