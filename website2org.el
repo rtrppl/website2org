@@ -4,7 +4,7 @@
 
 ;; Maintainer: René Trappel <rtrappel@gmail.com>
 ;; URL: https://github.com/rtrppl/website2org
-;; Version: 0.2.10
+;; Version: 0.2.11
 ;; Package-Requires: ((emacs "26"))
 ;; Keywords: comm
 
@@ -27,6 +27,10 @@
 
 ;; website2org.el allows to turn any website into a minimal orgmode
 ;; buffer or .org file.
+;;
+;; 0.2.11
+;; - Switch from `wget' to `curl' as standard tool; better handling 
+;; for Unicode escape sequences
 ;;
 ;; 0.2.10 
 ;; - Improved handling of HTML tags in links
@@ -85,7 +89,8 @@
 (require 'xml)
 (require 'shr)
 
-(defvar website2org-wget-cmd "wget -q ")
+(defvar website2org-datatransfer-tool-cmd "curl -L ") ;; alternatively use "wget -q "
+(defvar website2org-datatransfer-tool-cmd-mod " -o ") ;; alternatively use "wget -q " "-o ") ;; for wget use "-O "
 (defvar website2org-cache-filename "~/website2org-cache.html")
 
 ;; Turn website2org-additional-meta nil if not applicable. This is for
@@ -184,7 +189,7 @@ website2org-url-to-org. Results will be presented in a buffer."
 
 (defun website2org-create-local-cache-file (URL)
   "Uses wget to download a website into a local cache file."
-  (shell-command (concat website2org-wget-cmd "\"" URL "\"" " -O " website2org-cache-filename) t))
+  (shell-command (concat website2org-datatransfer-tool-cmd "\"" URL "\"" website2org-datatransfer-tool-cmd-mod  website2org-cache-filename) t))
 
 (defun website2org-load-file (filename)
   "Returns the plain html of a html-file."
@@ -415,6 +420,8 @@ Currently this function is not needed/used."
  (setq content (replace-regexp-in-string "</h2>" "" content))
  (setq content (replace-regexp-in-string "<h3>" "*** " content))
  (setq content (replace-regexp-in-string "</h3>" "" content))
+ (setq content (replace-regexp-in-string "<h4>" "**** " content))
+ (setq content (replace-regexp-in-string "</h4>" "" content))
  (setq content (replace-regexp-in-string "<u>" "" content)) ;; no support for U because it messes with org-links
  (setq content (replace-regexp-in-string "</u>" "" content))
  (setq content (replace-regexp-in-string "<cite\\([^>]*\\)>" " /" content))
@@ -563,7 +570,13 @@ Currently this function is not needed/used."
   (setq content (replace-regexp-in-string " " " " content))
   (setq content (replace-regexp-in-string "&amp;" "&" content))
   (setq content (replace-regexp-in-string "&#\\(?:8217\\|039\\);" "’" content))
-  (setq content (xml-substitute-special content)))
+  (setq content (xml-substitute-special content))
+  (setq content (replace-regexp-in-string
+   "\\\\u\\([0-9A-Fa-f]\\{4\\}\\)"
+   (lambda (m)
+     (char-to-string (string-to-number (match-string 1 m) 16)))
+   content)))
+
 
 (defun website2org-cleanup-org (content)
   "Final clean-up of the Orgmode content."

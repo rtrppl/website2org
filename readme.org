@@ -11,7 +11,7 @@ I have now three primary uses cases for this. 1) Local storage/read it later: I 
 
 This package is still in an early stage. I use it to replace =orgrr-save-website=, which draws on =org-web-tools--eww-readable= and =org-web-tools--html-to-org-with-pandoc= but has become more fragile by the day. =orgrr-save-website= also often does struggle to produce the kind of Orgmode I want to have - with as little HTML fragments as possible. 
 
-website2org requires [[https://www.gnu.org/software/wget/][wget]] but does not use [[https://pandoc.org/][Pandoc]]. The package parses HTML via [[https://stackoverflow.com/questions/1732348/regex-match-open-tags-except-xhtml-self-contained-tags][RegExp]] to achieve rather minimal looking Orgmode files, which are much smaller in size (the downloaded version of this readme from Github has 311KB, the website2org version just 9KB).
+website2org requires [[https://www.gnu.org/software/wget/][wget]] or [[https://curl.se/][curl]] (curl is now standard because it has better handling of redirects) but does not use [[https://pandoc.org/][Pandoc]]. The package parses HTML via [[https://stackoverflow.com/questions/1732348/regex-match-open-tags-except-xhtml-self-contained-tags][RegExp]] to achieve rather minimal looking Orgmode files, which are much smaller in size (the downloaded version of this readme from Github has 311KB, the website2org version just 9KB).
 
 You can automatically forward downloaded websites to an archiving website via =(setq website2org-archive t)=. The standard service here is [[https://archive.today][archive.today]], which can be changed by modifying =website2org-archive-url=. 
 
@@ -26,6 +26,9 @@ Parsing HTML with RegEx comes with lots of issues. Most experienced coders [[htt
 Still, there are some known issues even with otherwise working websites. Orgmode does not deal well with source blocks within quote blocks. These will look weird. Orgmode also sometimes has difficulties in dealing with two formatting styles for the same string. Bold and italics at the same time may or may not work. 
 
 ** Change log
+
+*0.2.11*
+- Switch from `wget' to `curl' as standard tool; better handling for Unicode escape sequences
 
 *0.2.10*
 - Improved handling of HTML tags in links
