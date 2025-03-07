@@ -198,8 +198,8 @@ website2org-url-to-org. Results will be presented in a buffer."
   "Deletes the website2org local cache file."
   (delete-file website2org-cache-filename))
 
-(defun website2org-shr-cleanup-rendering (content)
-  "Using `shr' for a first cleanup of the HTML." 
+(defun website2org-parse-html (content)
+  "Transforming HTML into a DOM." 
   (let ((processed-content)
 	(dom))
     (with-temp-buffer
@@ -210,32 +210,78 @@ website2org-url-to-org. Results will be presented in a buffer."
       (setq processed-content (buffer-substring-no-properties (point-min)(point-max))))
     processed-content))
 
-(defun website2org-insert-dom (dom)
+(defun website2org-insert-dom (dom &optional in-span)
   "Recursively insert a DOM tree as Orgmode."
   (unless (stringp dom) ;; Ignore plain text nodes
-    (let ((tag (symbol-name (car dom)))  ;; Convert symbol to string
-          (attrs (cadr dom))
-          (children (cddr dom))
-          (attr-string ""))
+    (let* ((tag (symbol-name (car dom)))  ;; Convert symbol to string
+           (attrs (cadr dom))
+           (children (cddr dom))
+	   (insert-p)
+	   (in-span (or in-span (or (string= tag "h1")
+				    (string= tag "a"))))
+           (attr-string ""))
       ;; Construct attribute string manually
-      (dolist (attr attrs)
-        (setq attr-string (concat attr-string " " (symbol-name (car attr)) "=\"" (cdr attr) "\"")))
-
+	(dolist (attr attrs)
+	  (when (string= (symbol-name (car attr)) "href")
+	    (setq attr-string (cdr attr)))
+;	  (setq attr-string (concat attr-string " " (symbol-name (car attr)) "=\"" (cdr attr) "\"")))
+	(when (string-prefix-p "javascript" attr-string t)
+	  (print attr)))
       (when (not (or (string= tag "script")
 		     (string= tag "style")))
 
 	;; Insert opening tag with attributes
-	(insert "<" tag attr-string ">")
-
+;	(insert "<" tag attr-string ">")
+	(when (string= tag "h1")
+	  (setq insert-p t)
+	  (insert "\n\n* "))
+	(when (string= tag "a")
+	  (print attr-string))
+	(when (and (string= tag "a")
+		   (not (string-prefix-p "javascript" attr-string t)))
+	  (setq insert-p t)
+	  (insert (concat " [[" attr-string "][")))
+	(when (string= tag "p")
+	  (setq insert-p t))
+	(when (string= tag "span")
+	  (when in-span
+	    (setq insert-p t)))
+	(when (string= tag "em")
+	  (insert "/")
+	  (setq insert-p t))
       ;; Insert children
       (dolist (child children)
-        (if (stringp child)
+        (if (and (stringp child)
+		   insert-p)
 	    (progn
-              (insert child)) ;; Print text node
-          (website2org-insert-dom child))) ;; Recursive call for nested elements
+	      (when (not in-span)
+		(insert (string-trim child))) ;; Print text node
+	      (when in-span
+		(insert (string-trim child))))
+          (website2org-insert-dom child in-span))) ;; Recursive call for nested elements
 
       ;; Insert closing tag
-      (insert "</" tag ">\n")))))
+      (when insert-p
+	(when (string= tag "em")
+	  (insert "/ "))
+	(when (string= tag "a")
+	  (insert "]] "))
+	(when (string= tag "p")
+	  (insert "\n\n"))
+	(when (string= tag "h1")
+	  (insert "\n\n"))
+	)))))
+
+(defun website2org-insert-token-h1 (children)
+ "Transform a H1 headline in a DOM into Orgmode."
+ (insert "* ")
+ (dolist (child children)
+   (if (stringp child)
+       (progn
+         (insert child)) ;; Print text node
+     (website2org-insert-dom child))))
+
+
 
 (defun website2org-to-buffer-test (url &optional dummy)
   "Creates an Orgmode buffer from an URL using libxml."
@@ -243,14 +289,14 @@ website2org-url-to-org. Results will be presented in a buffer."
   (with-temp-buffer
     (website2org-create-local-cache-file url)
     (let* ((content (website2org-load-file website2org-cache-filename))
-	   (content (website2org-shr-cleanup-rendering content))
-	   (title (website2org-process-html content "title" url))
-	   (org-content (website2org-process-html content "content" url))
+	   (content (website2org-parse-html content))
+;	   (title (website2org-process-html content "title" url))
+;	   (org-content (website2org-process-html content "content" url))
 	   (final))
-      (print content)
+ 
       (website2org-delete-local-cache-file)
-    (setq final (concat "#+roam_key: " url "\n\n" org-content))
-    (setq final (concat "#+title: " title "\n" final))
+    (setq final (concat "#+roam_key: " url "\n\n" content))
+ ;   (setq final (concat "#+title: " title "\n" final))
     (with-current-buffer (get-buffer-create "website2org-test")
       (erase-buffer)
       (switch-to-buffer "website2org-test")
