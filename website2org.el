@@ -4,7 +4,7 @@
 
 ;; Maintainer: René Trappel <rtrappel@gmail.com>
 ;; URL: https://github.com/rtrppl/website2org
-;; Version: 0.2.11
+;; Version: 0.2.12
 ;; Package-Requires: ((emacs "26"))
 ;; Keywords: comm
 
@@ -28,8 +28,12 @@
 ;; website2org.el allows to turn any website into a minimal orgmode
 ;; buffer or .org file.
 ;;
+;; 0.2.12
+;; - Fixed Substack double loading content bug (by deleting all scripts
+;; before processing the HTML)
+;;
 ;; 0.2.11
-;; - Switch from `wget' to `curl' as standard tool; better handling 
+;; - Switching from `wget' to `curl' as standard tool; better handling 
 ;; for Unicode escape sequences
 ;;
 ;; 0.2.10 
@@ -210,13 +214,15 @@ website2org-url-to-org. Results will be presented in a buffer."
 	 (case)
 	 (error-in-log)
 	 (title))
-    (setq content (website2org-cleanup-remove-footer content)) 
-    (with-temp-buffer 
+    (setq content (website2org-cleanup-remove-footer content))
+    (setq content (replace-regexp-in-string "[\s =]*<script.*</script>[\s=]*" "" content)) 
+    (with-temp-buffer
       (insert content)
       (goto-char (point-min))
       (while (re-search-forward "<img[ \t][^>]*?src=\\(['\"]?\\)\\([^'\" \t>]+\\)\\1[^>]*>" nil t)
 	  (let* ((url (match-string 2))
 		 (replacement (concat "\n<img src=\"" url "\"</img>"))) ;; creating a fake image end-tag here
+	    (print replacement)
 	  (replace-match replacement t t)))
       (goto-char (point-min))
       (while (re-search-forward "\\(<blockquote\\)\\s-*\\([^\0]+?\\)\\(</blockquote>\\)" nil t)

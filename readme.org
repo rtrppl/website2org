@@ -27,8 +27,11 @@ Still, there are some known issues even with otherwise working websites. Orgmode
 
 ** Change log
 
+*0.2.12*
+- Fixed Substack double loading content bug (by deleting all scripts before processing the HTML)
+
 *0.2.11*
-- Switch from =wget= to =curl= as standard tool; better handling of Unicode escape sequences
+- Switching from =wget= to =curl= as standard tool; better handling of Unicode escape sequences
 
 *0.2.10*
 - Improved handling of HTML tags in links
