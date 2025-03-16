@@ -4,7 +4,7 @@
 
 ;; Maintainer: René Trappel <rtrappel@gmail.com>
 ;; URL: https://github.com/rtrppl/website2org
-;; Version: 0.2.12
+;; Version: 0.2.13
 ;; Package-Requires: ((emacs "26"))
 ;; Keywords: comm
 
@@ -27,6 +27,11 @@
 
 ;; website2org.el allows to turn any website into a minimal orgmode
 ;; buffer or .org file.
+;;
+;; 0.2.13
+;; - Added `website2org-visual-fill-column-mode-p' configuration;
+;; `website2org-to-buffer' now creates read-only buffer; improvements
+;; in display of quotation marks before links 
 ;;
 ;; 0.2.12
 ;; - Fixed Substack double loading content bug (by deleting all scripts
@@ -96,6 +101,7 @@
 (defvar website2org-datatransfer-tool-cmd "curl -L ") ;; alternatively use "wget -q "
 (defvar website2org-datatransfer-tool-cmd-mod " -o ") ;; alternatively use "wget -q " "-o ") ;; for wget use "-O "
 (defvar website2org-cache-filename "~/website2org-cache.html")
+(defvar website2org-visual-fill-column-mode-p t)
 
 ;; Turn website2org-additional-meta nil if not applicable. This is for
 ;; use in orgrr (https://github.com/rtrppl/orgrr).
@@ -170,7 +176,10 @@ website2org-url-to-org. Results will be presented in a buffer."
     (with-current-buffer (get-buffer-create "website2org")
       (erase-buffer)
       (switch-to-buffer "website2org")
-      (insert final)))
+      (insert final)
+      (when website2org-visual-fill-column-mode-p
+	(visual-fill-column-mode))
+      (setq-local buffer-read-only t)))
   (website2org-prepare-findings-buffer "website2org")))
 
 (defun website2org-prepare-findings-buffer (buffer)
@@ -222,7 +231,6 @@ website2org-url-to-org. Results will be presented in a buffer."
       (while (re-search-forward "<img[ \t][^>]*?src=\\(['\"]?\\)\\([^'\" \t>]+\\)\\1[^>]*>" nil t)
 	  (let* ((url (match-string 2))
 		 (replacement (concat "\n<img src=\"" url "\"</img>"))) ;; creating a fake image end-tag here
-	    (print replacement)
 	  (replace-match replacement t t)))
       (goto-char (point-min))
       (while (re-search-forward "\\(<blockquote\\)\\s-*\\([^\0]+?\\)\\(</blockquote>\\)" nil t)
@@ -636,6 +644,8 @@ Currently this function is not needed/used."
     (setq content (replace-regexp-in-string "\\]\\[\/[ ]*" "][/" content))
 ;; proper separatuion of links from italics or strong 
     (setq content (replace-regexp-in-string "\]\]\\*" "]] *" content))
+    (setq content (replace-regexp-in-string "[\“] \\[\\[" "\“[[" content))
+    (setq content (replace-regexp-in-string "[\"] \\[\\[" "\"[[" content))
 ;; proper strong
     (setq content (replace-regexp-in-string "\\*\\*" "*" content))
 ;; no empty line before END_SRC
