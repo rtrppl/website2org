@@ -174,6 +174,7 @@ website2org-url-to-org. Results will be presented in a buffer."
     (setq final (concat "#+roam_key: " url "\n\n" org-content))
     (setq final (concat "#+title: " title "\n" final))
     (with-current-buffer (get-buffer-create "website2org")
+      (setq-local buffer-read-only nil)
       (erase-buffer)
       (switch-to-buffer "website2org")
       (insert final)
