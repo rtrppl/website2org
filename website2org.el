@@ -4,7 +4,7 @@
 
 ;; Maintainer: René Trappel <rtrappel@gmail.com>
 ;; URL: https://github.com/rtrppl/website2org
-;; Version: 0.2.13
+;; Version: 0.3
 ;; Package-Requires: ((emacs "26"))
 ;; Keywords: comm
 
@@ -27,6 +27,11 @@
 
 ;; website2org.el allows to turn any website into a minimal orgmode
 ;; buffer or .org file.
+;;
+;; 0.3
+;; - Fixes for detecting links in documents; `website2org-dired-file-to-org' 
+;; transforms marked HTML files in `Dired' into Orgmode documents and places 
+;; them into `website2org-directory' 
 ;;
 ;; 0.2.13
 ;; - Added `website2org-visual-fill-column-mode-p' configuration;
@@ -120,7 +125,8 @@ website2org-url-to-org. Creates an org-file in website2org-directory."
   (let ((url (or 
               (thing-at-point-url-at-point)
 	      (get-text-property (point) 'shr-url)
-              (org-element-property :raw-link (org-element-context))
+	      (when (derived-mode-p 'org-mode)
+		(org-element-property :raw-link (org-element-context)))
               (read-string "Please enter a URL: "))))
     (website2org-url-to-org url)))
 
@@ -131,36 +137,65 @@ website2org-url-to-org. Results will be presented in a buffer."
   (let ((url (or 
               (thing-at-point-url-at-point)
 	      (get-text-property (point) 'shr-url)
-              (org-element-property :raw-link (org-element-context))
+	      (when (derived-mode-p 'org-mode)
+		(org-element-property :raw-link (org-element-context)))
               (read-string "Please enter a URL: "))))
     (website2org-to-buffer url)))
 
-(defun website2org-url-to-org (url &optional dummy)
- "Creates an Orgmode document from an URL."
+(defun website2org-url-to-org (url &optional dummy file)
+ "Creates an Orgmode document from an URL or a file."
  (with-temp-buffer
-  (website2org-create-local-cache-file url)
-  (let* ((content (website2org-load-file website2org-cache-filename))
-	 (title (website2org-process-html content "title" url))
-	 (org-content (website2org-process-html content "content" url))
-	 (time (format-time-string website2org-filename-time-format))
-         (filename)
-	 (final))
-    (when website2org-archive
-      (shell-command (concat "open " website2org-archive-url url)))
-    (setq filename (replace-regexp-in-string "[\"\|',.:;?\s\\\/]" "_" title))
-    (when (> (length filename) 100)
-	  (setq filename (substring title 0 100)))
-    (setq filename (replace-regexp-in-string "_\\{2,\\}" "_" filename))
-    (setq filename (concat website2org-directory time "-" filename))
-    (website2org-delete-local-cache-file)
-    (find-file (concat filename ".org"))
-    (insert (concat "#+title: " time "-" (replace-regexp-in-string "[\(\)]" "-" title) "\n"))
-    (when website2org-additional-meta
-      (insert (concat website2org-additional-meta "\n")))
-    (insert (concat "#+roam_key: " url "\n\n"))
-    (insert org-content)
-    (goto-char (point-min)))))
-
+   (when (not file)
+     (website2org-create-local-cache-file url))
+   (let* ((content (website2org-load-file (or file website2org-cache-filename)))
+	  (url (or url (website2org-return-URL content)))
+	(title (website2org-process-html content "title" url))
+	(org-content (website2org-process-html content "content" url))
+	(time (format-time-string website2org-filename-time-format))
+        (filename)
+	(final))
+     (when (and website2org-archive
+	      (not file))
+       (shell-command (concat "open " website2org-archive-url url)))
+     (setq filename (replace-regexp-in-string "[\"\|',.:;?\s\\\/]" "_" title))
+     (when (> (length filename) 100)
+       (setq filename (substring title 0 100)))
+   (setq filename (replace-regexp-in-string "_\\{2,\\}" "_" filename))
+   (setq filename (concat website2org-directory time "-" filename))
+   (when (not file)
+     (website2org-delete-local-cache-file)
+     (with-current-buffer (find-file (concat filename ".org"))
+       (insert (concat "#+title: " time "-" (replace-regexp-in-string "[\(\)]" "-" title) "\n"))
+       (when website2org-additional-meta
+	 (insert (concat website2org-additional-meta "\n")))
+     (insert (concat "#+roam_key: " url "\n\n"))
+     (insert org-content)
+     (goto-char (point-min))))
+   (when file
+     (with-current-buffer (find-file-noselect (concat filename ".org"))
+       (insert (concat "#+title: " time "-" (replace-regexp-in-string "[\(\)]" "-" title) "\n"))
+       (when website2org-additional-meta
+	 (insert (concat website2org-additional-meta "\n")))
+       (insert (concat "#+roam_key: " url "\n\n"))
+       (insert org-content)
+       (save-buffer (current-buffer))
+       (kill-buffer (current-buffer)))))))
+   
+ 
+(defun website2org-dired-file-to-org ()
+  "Transforms selected files into Orgmode files and places them
+into `website2org-directory'."
+  (interactive)
+  (let* ((marked-files (dired-get-marked-files)))
+    (dolist (file marked-files)
+      (let* ((extension (file-name-extension file)))
+	(when (string= extension "html")
+	  (website2org-url-to-org nil nil file)
+	  (message "Transforming... %s" file))
+	(when (not (string= extension "html"))
+	  (message "%s is not a HTML file." file))))
+    (message "All HTML files transformed."))
+  (revert-buffer)) 
 
 (defun website2org-to-buffer (url &optional dummy)
   "Creates an Orgmode buffer from an URL."
@@ -217,7 +252,7 @@ website2org-url-to-org. Results will be presented in a buffer."
   "Deletes the website2org local cache file."
   (delete-file website2org-cache-filename))
 
-(defun website2org-process-html (content what og-url)
+(defun website2org-process-html (content what &optional og-url)
   "Main function to transform html into minimal org."
   (let* ((processed-content)
 	 (return)
@@ -332,6 +367,21 @@ website2org-url-to-org. Results will be presented in a buffer."
     (setq title (website2org-cleanup-org-weird-characters title))
     (setq title (string-trim title))
     title))
+
+(defun website2org-return-URL (content)
+  "Returns the URL of a HTML document based on canonical link."
+  (let ((URL)
+	(URL-p))
+    (with-temp-buffer 
+      (insert content)
+      (goto-char (point-min))
+      (while (re-search-forward "\\(<link rel=\"canonical\" href=\"\\)\\([^\"]*\\)" nil t)
+	(when (and (match-string 1)
+		   (not URL-p))
+	  (setq URL (match-string 2))
+	  (setq URL-p 1))))
+    URL))
+
 
 
 (defun website2org-cleanup-html-tags (content)

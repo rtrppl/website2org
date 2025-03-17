@@ -27,6 +27,9 @@ Still, there are some known issues even with otherwise working websites. Orgmode
 
 ** Change log
 
+*0.3*
+- Fixes for detecting links in documents; =website2org-dired-file-to-org= transforms marked HTML files in =Dired= into Orgmode documents and places them into =website2org-directory= 
+
 *0.2.13*
 - Added =website2org-visual-fill-column-mode-p= configuration; =website2org-to-buffer= now creates read-only buffer; improvements in display of quotation marks before links 
 
@@ -95,6 +98,9 @@ Additionally you can set these values:
 These are the primary functions of website2org.el:
 
 =website2org= will download the website at point (or from a provided URL) and save it as an Orgmode file. =website2org-temp= will download a website at point (or from a provided URL) and present it as a temporary Orgmode buffer (press "q" to exit the screen; press "spacebar" to scroll).
+
+=website2org-dired-file-to-org= will transform marked HTML documents in Dired into Orgmode documents and places them into =website2org-directory=.
+
 
 ** Elfeed
 
