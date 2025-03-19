@@ -142,6 +142,7 @@ website2org-url-to-org. Results will be presented in a buffer."
               (read-string "Please enter a URL: "))))
     (website2org-to-buffer url)))
 
+;;;###autoload
 (defun website2org-url-to-org (url &optional dummy file)
  "Creates an Orgmode document from an URL or a file."
  (with-temp-buffer
@@ -181,7 +182,7 @@ website2org-url-to-org. Results will be presented in a buffer."
        (save-buffer (current-buffer))
        (kill-buffer (current-buffer)))))))
    
- 
+ ;;;###autoload
 (defun website2org-dired-file-to-org ()
   "Transforms selected files into Orgmode files and places them
 into `website2org-directory'."
@@ -197,6 +198,7 @@ into `website2org-directory'."
     (message "All HTML files transformed."))
   (revert-buffer)) 
 
+;;;###autoload
 (defun website2org-to-buffer (url &optional dummy)
   "Creates an Orgmode buffer from an URL."
   (with-temp-buffer
