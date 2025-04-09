@@ -4,7 +4,7 @@
 
 ;; Maintainer: René Trappel <rtrappel@gmail.com>
 ;; URL: https://github.com/rtrppl/website2org
-;; Version: 0.3
+;; Version: 0.3.1
 ;; Package-Requires: ((emacs "26"))
 ;; Keywords: comm
 
@@ -25,8 +25,13 @@
 
 ;;; Commentary:
 
-;; website2org.el allows to turn any website into a minimal orgmode
+;; website2org.el is a tool to turn a website into a minimal orgmode
 ;; buffer or .org file.
+;;
+;; 0.3.1
+;; - Removing class=anchor links from headlines; fix for repeating 
+;; paragraphs when headlines are dropped in unfinished paragraphs; more fixes
+;; for bold and italics
 ;;
 ;; 0.3
 ;; - Fixes for detecting links in documents; `website2org-dired-file-to-org' 
@@ -54,49 +59,12 @@
 ;; link
 ;;
 ;; 0.2.8
-;; - Added option to press the spacevar to scroll in `website2org-temp' 
+;; - Added option to press the spacebar to scroll in `website2org-temp' 
 ;;
 ;; 0.2.7
 ;; - Added support for `elfeed-show-mode' + added minor mode for 
 ;; `website2org-temp' (press "q" to exit)
-;; 
-;; 0.2.6
-;; - <mark> now is handled as *; improved punctuation for sentences with
-;; strong, i.e. *
 ;;
-;; 0.2.5
-;; - Improved substitution for HTML character entities; removed <small>
-;; and <abbr> 
-;;
-;; 0.2.4
-;; - More fixes (+ support for some footnotes)
-;;
-;; 0.2.3
-;; - Improved handling of <footer> + some more fixes
-;;
-;; 0.2.2
-;; - Improved support for many sites with code blocks, lists, images
-;; and more
-;;
-;; 0.2.1
-;; - Added support for images
-;;
-;; 0.2.0
-;; - Added option to send downloaded URL to a web archive
-;;
-;; 0.1.4
-;; - several small fixes; several links in one line are now correctly
-;; dealt with
-;;
-;; 0.1.3
-;; - bug fixes for the case when there is no <h1> tag; more parsing  
-;;
-;; 0.1.2
-;; - Further improvements to parsing
-;; 
-;; 0.1.1
-;; - Added <ol> and removed <input> and <time>; many small changes
-
 ;;; Code:
 
 (require 'org)
@@ -320,6 +288,9 @@ into `website2org-directory'."
 		     (not (string-match-p "<a " case)))
 	    (setq processed-content (concat processed-content "\n\n" case "\n\n")))
 	  (when (and (string-match-p "<p[\s>]" case)
+		     (not (string-match-p "<h1" case))
+		     (not (string-match-p "<h2" case))
+		     (not (string-match-p "<h3" case))
 		     (not (string-match-p "<img" case)))
 	    (setq processed-content (concat processed-content "\n\n" (replace-regexp-in-string "\n" " " case) "\n\n"))))))
     (setq processed-content (website2org-cleanup-remove-header processed-content))
@@ -384,8 +355,6 @@ into `website2org-directory'."
 	  (setq URL-p 1))))
     URL))
 
-
-
 (defun website2org-cleanup-html-tags (content)
   "Minimalizing HTML tags."
   (setq content (replace-regexp-in-string "<p\\s-\\([^>]*\\)>" "<p>" content))
@@ -394,17 +363,19 @@ into `website2org-directory'."
   (setq content (replace-regexp-in-string "\\(<figure[\s>]\\)\\s-*\\([^\0]+?\\)\\(</figure>\\)" "" content))
   (setq content (replace-regexp-in-string "[\s =]*<script.*</script>[\s=]*" "" content))
   (setq content (replace-regexp-in-string "\\(<include-fragment[\s>]\\)\\s-*\\([^\0]+?\\)\\(</include-fragment>\\)" "" content))
-  (setq content (replace-regexp-in-string "<h1\\([^>]*\\)>" "<h1>" content))
-  (setq content (replace-regexp-in-string "<h2\\([^>]*\\)>" "<h2>" content))
-  (setq content (replace-regexp-in-string "<h3\\([^>]*\\)>" "<h3>" content))
-  (setq content (replace-regexp-in-string "<ul\\([^>]*\\)>" "<ul>" content))
+  (setq content (replace-regexp-in-string "<h1\\([^>]*\\)>" "\n\n<h1>" content))
+  (setq content (replace-regexp-in-string "<h2\\([^>]*\\)>" "\n\n<h2>" content))
+  (setq content (replace-regexp-in-string "<h3\\([^>]*\\)>" "\n\n<h3>" content))
+  (setq content (replace-regexp-in-string "<h4\\([^>]*\\)>" "\n\n<h4>" content))
+  (setq content (replace-regexp-in-string "<h5\\([^>]*\\)>" "\n\n<h5>" content))
+  (setq content (replace-regexp-in-string "<ul\\([^>]*\\)>" "\n\n<ul>" content))
+  (setq content (replace-regexp-in-string "<ol\\([^>]*\\)>" "\n\n<ol>" content))
   (setq content (replace-regexp-in-string "<li\\([^>]*\\)>" "<li>" content))
   (setq content (replace-regexp-in-string "<pre\\([^>]*\\)>" "<pre>" content))
   (setq content (replace-regexp-in-string "<blockquote\\s-\\([^>]*\\)>" "\n#+BEGIN_QUOTE\n" content))
   (setq content (replace-regexp-in-string "</blockquote>" "\n#+END_QUOTE\n" content))
   (setq content (replace-regexp-in-string "<pre>" "\n\n#+BEGIN_SRC\n" content))
   (setq content (replace-regexp-in-string "</pre>" "\n#+END_SRC" content))
-  (setq content (replace-regexp-in-string "<ol\\([^>]*\\)>" "<ol>" content))
   (setq content (replace-regexp-in-string "<time\\([^>]*\\)>" "" content))
   (setq content (replace-regexp-in-string "</time\\([^>]*\\)>" "" content))
   (setq content (replace-regexp-in-string "<font\\([^>]*\\)>" "" content))
@@ -467,20 +438,20 @@ Currently this function is not needed/used."
   "Turns the filtered HTML content into clean Orgmode content."
  (setq content (replace-regexp-in-string "<p>" "" content))
  (setq content (replace-regexp-in-string "</p>" "\n" content))
- (setq content (replace-regexp-in-string "<strong>" "**" content))
- (setq content (replace-regexp-in-string "</strong>" "__** " content))
- (setq content (replace-regexp-in-string "\s*__\\*\\*" "**" content))
- (setq content (replace-regexp-in-string "\\*\\*\s," "**, " content))
- (setq content (replace-regexp-in-string "<b>" "**" content))
- (setq content (replace-regexp-in-string "</b>" "**" content))
+ (setq content (replace-regexp-in-string "<strong>" "*" content))
+ (setq content (replace-regexp-in-string "[ ]*</strong>" "* " content))
+ (setq content (replace-regexp-in-string "\s*__\\*\\*" "*" content))
+ (setq content (replace-regexp-in-string "\\*\\*\s," "*, " content))
+ (setq content (replace-regexp-in-string "<b>" "*" content))
+ (setq content (replace-regexp-in-string "[ ]*</b>" "*" content))
  (setq content (replace-regexp-in-string "<i>" "" content))
  (setq content (replace-regexp-in-string "</i>" "" content))
  (setq content (replace-regexp-in-string "<kbd>" "~" content))
  (setq content (replace-regexp-in-string "</kbd>" "~" content))
  (setq content (replace-regexp-in-string "<em>" " /" content))
- (setq content (replace-regexp-in-string "</em>" "/ " content))
- (setq content (replace-regexp-in-string "\\*\\* \/" " **/" content))
- (setq content (replace-regexp-in-string "\/ \\*\\*" "/** " content))
+ (setq content (replace-regexp-in-string "[ ]*</em>" "/ " content))
+ (setq content (replace-regexp-in-string "\\*\\* \/" " */" content))
+ (setq content (replace-regexp-in-string "\/ \\*\\*" "/* " content))
  (setq content (replace-regexp-in-string "<h1>" "* " content))
  (setq content (replace-regexp-in-string "</h1>" "" content))
  (setq content (replace-regexp-in-string "<h2>" "** " content))
@@ -532,17 +503,22 @@ Currently this function is not needed/used."
       (insert content)
       (goto-char (point-min))
       (while (re-search-forward "<a[ \t][^>]*?href=\\(['\"]?\\)\\([^'\" \t>]+\\)\\1[^>]*>\\([^<]+\\)</a>" nil t)
-	(let* ((url (match-string 2))
-	      (url (website2org-fix-relative-links url og-url))
-	      (url (replace-regexp-in-string "^#" "*" url))
-	      (text (match-string 3))
-	      (text (replace-regexp-in-string "[\n\t]" "" text))
-	      (text (replace-regexp-in-string "=" " " text)) ; removed because of fontification glitch
-	      (text (replace-regexp-in-string "^[ \t]+" "" text)))
-	  (when (not (string-match-p "#fn" url))
-	    (replace-match (format "[[%s][%s]]" url text) t t))
-	  (when (string-match-p "#fn" url)
-	    (replace-match (format " [fn:%s]" text) t t))))
+	  (let* ((url (match-string 2))
+		 (url (website2org-fix-relative-links url og-url))
+		 (url (replace-regexp-in-string "^#" "*" url))
+		 (text (match-string 3))
+		 (text (replace-regexp-in-string "[\n\t]" "" text))
+		 (text (replace-regexp-in-string "=" " " text)) ; removed because of fontification glitch
+		 (text (replace-regexp-in-string "^[ \t]+" "" text))
+		 (anchor))
+	    (when (string-match-p "class=anchor" (match-string 0))
+	      (replace-match "" t t)
+	      (setq anchor t))
+	    (when (and (not (string-match-p "#fn" url))
+		       (not anchor))
+	      (replace-match (format "[[%s][%s]]" url text) t t))
+	    (when (string-match-p "#fn" url)
+	      (replace-match (format " [fn:%s]" text) t t))))
       (goto-char (point-min))
       (while (re-search-forward "<a[\s\t].*+href=['\"]\\([^'\"]+\\)['\"][^>]*></a>" nil t)
 	  (replace-match "" t t))
@@ -699,8 +675,6 @@ Currently this function is not needed/used."
     (setq content (replace-regexp-in-string "\]\]\\*" "]] *" content))
     (setq content (replace-regexp-in-string "[\“] \\[\\[" "\“[[" content))
     (setq content (replace-regexp-in-string "[\"] \\[\\[" "\"[[" content))
-;; proper strong
-    (setq content (replace-regexp-in-string "\\*\\*" "*" content))
 ;; no empty line before END_SRC
     (setq content (replace-regexp-in-string "^\n#\\+END_SRC" "#+END_SRC" content))
 ;; no empty line before END_QUOTE
