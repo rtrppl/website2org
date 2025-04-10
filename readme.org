@@ -27,6 +27,9 @@ Still, there are some known short-comings even with otherwise working websites. 
 
 ** Change log
 
+*0.3.2*
+- Fix for <dl> blocks
+
 *0.3.1*
 - Removing class=anchor links from headlines; bug fix for repeating paragraphs when headlines are dropped in unfinished paragraphs; more bug fixes for bold and italics
 

@@ -1,10 +1,8 @@
 ;;; website2org.el --- Turn any website into a minimal orgmode buffer or .org file -*- lexical-binding: t -*-
 
-;; Copyright (C) 2024 Free Software Foundation, Inc.
-
 ;; Maintainer: René Trappel <rtrappel@gmail.com>
 ;; URL: https://github.com/rtrppl/website2org
-;; Version: 0.3.1
+;; Version: 0.3.2
 ;; Package-Requires: ((emacs "26"))
 ;; Keywords: comm
 
@@ -27,6 +25,9 @@
 
 ;; website2org.el is a tool to turn a website into a minimal orgmode
 ;; buffer or .org file.
+;;
+;; 0.3.2
+;; - Fix for <dl> blocks
 ;;
 ;; 0.3.1
 ;; - Removing class=anchor links from headlines; fix for repeating 
@@ -260,7 +261,7 @@ into `website2org-directory'."
 		 (replacement (replace-regexp-in-string "</strong>" "*" replacement)))
 	    (replace-match replacement t t))))
       (goto-char (point-min))
-      (while (re-search-forward "\\(<p[\s>]\\|<blockquote\\|<pre\\|<h1\\|<h2\\|<h3\\|<li[\s>]\\|<title\\|<img\\)\\s-*\\([^\0]+?\\)\\(</p>\\|</blockquote>\\|</pre>\\|</h1>\\|</h2>\\|</h3>\\|</ul>\\|</ol>\\|</li>\\|</title>\\|</img>\\)" nil t)
+      (while (re-search-forward "\\(<p[\s>]\\|<blockquote\\|<pre\\|<h1\\|<h2\\|<h3\\|<li[\s>]\\|<title\\|<img\\|<dl\\)\\s-*\\([^\0]+?\\)\\(</p>\\|</blockquote>\\|</pre>\\|</h1>\\|</h2>\\|</h3>\\|</ul>\\|</ol>\\|</li>\\|</title>\\|</img>\\|</dl>\\)" nil t)
 	(when (match-string 0)
 	  (setq case (match-string 0))
 	  (when (or (string-match-p "<h1" case)
@@ -277,6 +278,9 @@ into `website2org-directory'."
 		     (not (string-match-p "<p" case)))
 	    (setq case (replace-regexp-in-string "<ul[^>]*>" "\n" case))
 	    (setq case (replace-regexp-in-string "<ol[^>]*>" "\n" case))
+	    (setq processed-content (concat processed-content "\n\n" case "\n\n")))
+	  (when (string-match-p "<dl[^>]*>" case)
+	    (setq case (replace-regexp-in-string "\n" " " case))
 	    (setq processed-content (concat processed-content "\n\n" case "\n\n")))
 	  (when (string-match-p "<blockquote" case)
 	    (setq processed-content (concat processed-content "\n\n" case "\n\n")))
@@ -371,6 +375,9 @@ into `website2org-directory'."
   (setq content (replace-regexp-in-string "<ul\\([^>]*\\)>" "\n\n<ul>" content))
   (setq content (replace-regexp-in-string "<ol\\([^>]*\\)>" "\n\n<ol>" content))
   (setq content (replace-regexp-in-string "<li\\([^>]*\\)>" "<li>" content))
+  (setq content (replace-regexp-in-string "<dl\\([^>]*\\)>" "<dl>" content))
+  (setq content (replace-regexp-in-string "<dt\\([^>]*\\)>" "<dt>" content))
+  (setq content (replace-regexp-in-string "<dd\\([^>]*\\)>" "<dd>" content))
   (setq content (replace-regexp-in-string "<pre\\([^>]*\\)>" "<pre>" content))
   (setq content (replace-regexp-in-string "<blockquote\\s-\\([^>]*\\)>" "\n#+BEGIN_QUOTE\n" content))
   (setq content (replace-regexp-in-string "</blockquote>" "\n#+END_QUOTE\n" content))
@@ -444,6 +451,14 @@ Currently this function is not needed/used."
  (setq content (replace-regexp-in-string "\\*\\*\s," "*, " content))
  (setq content (replace-regexp-in-string "<b>" "*" content))
  (setq content (replace-regexp-in-string "[ ]*</b>" "*" content))
+ (setq content (replace-regexp-in-string "<kbd>" "*" content))
+ (setq content (replace-regexp-in-string "[ ]*</kbd>" "*" content))
+ (setq content (replace-regexp-in-string "<dl>" "" content))
+ (setq content (replace-regexp-in-string "</dl>" "" content))
+ (setq content (replace-regexp-in-string "<dt>" "- " content))
+ (setq content (replace-regexp-in-string "</dt>" ": " content))
+ (setq content (replace-regexp-in-string "<dd>" "" content))
+ (setq content (replace-regexp-in-string "</dd>" "\n" content))
  (setq content (replace-regexp-in-string "<i>" "" content))
  (setq content (replace-regexp-in-string "</i>" "" content))
  (setq content (replace-regexp-in-string "<kbd>" "~" content))
