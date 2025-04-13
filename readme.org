@@ -85,8 +85,10 @@ Or, if you use straight:
 Additionally you can set these values:
 
 #+begin_src elisp
-;; If wget should be called with a different command.
+;; If wget should be called instead of curl.
 (setq website2org-wget-cmd "wget -q ") 
+;; If wget is used you need to set this:
+(setq website2org-datatransfer-tool-cmd-mod " -O ")
 ;; Change the name of the local cache file.
 (setq website2org-cache-filename "~/website2org-cache.html") 
 ;; Turn website2org-additional-meta nil if not applicable. This is for
