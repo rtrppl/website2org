@@ -2,7 +2,7 @@
 
 ;; Maintainer: René Trappel <rtrappel@gmail.com>
 ;; URL: https://github.com/rtrppl/website2org
-;; Version: 0.3.2
+;; Version: 0.3.3
 ;; Package-Requires: ((emacs "26"))
 ;; Keywords: comm
 
@@ -25,6 +25,9 @@
 
 ;; website2org.el is a tool to turn a website into a minimal orgmode
 ;; buffer or .org file.
+;;
+;; 0.3.3
+;; - Fix for <wow-image> and <u style...>; fix for [] in links
 ;;
 ;; 0.3.2
 ;; - Fix for <dl> blocks
@@ -258,7 +261,9 @@ into `website2org-directory'."
 		 (replacement (replace-regexp-in-string "<em[^>]*>" "/" replacement))
 		 (replacement (replace-regexp-in-string "</em>" "/" replacement))
 		 (replacement (replace-regexp-in-string "<strong[^>]*>" "*" replacement))
-		 (replacement (replace-regexp-in-string "</strong>" "*" replacement)))
+		 (replacement (replace-regexp-in-string "</strong>" "*" replacement))
+		 (replacement (replace-regexp-in-string "\\[" "(" replacement))
+		 (replacement (replace-regexp-in-string "\\]" ")" replacement)))
 	    (replace-match replacement t t))))
       (goto-char (point-min))
       (while (re-search-forward "\\(<p[\s>]\\|<blockquote\\|<pre\\|<h1\\|<h2\\|<h3\\|<li[\s>]\\|<title\\|<img\\|<dl\\)\\s-*\\([^\0]+?\\)\\(</p>\\|</blockquote>\\|</pre>\\|</h1>\\|</h2>\\|</h3>\\|</ul>\\|</ol>\\|</li>\\|</title>\\|</img>\\|</dl>\\)" nil t)
@@ -383,6 +388,8 @@ into `website2org-directory'."
   (setq content (replace-regexp-in-string "</blockquote>" "\n#+END_QUOTE\n" content))
   (setq content (replace-regexp-in-string "<pre>" "\n\n#+BEGIN_SRC\n" content))
   (setq content (replace-regexp-in-string "</pre>" "\n#+END_SRC" content))
+  (setq content (replace-regexp-in-string "<u style\\([^>]*\\)>" "" content))
+  (setq content (replace-regexp-in-string "<wow-image.*</wow-image>" "" content))
   (setq content (replace-regexp-in-string "<time\\([^>]*\\)>" "" content))
   (setq content (replace-regexp-in-string "</time\\([^>]*\\)>" "" content))
   (setq content (replace-regexp-in-string "<font\\([^>]*\\)>" "" content))
