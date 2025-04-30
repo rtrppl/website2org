@@ -2,7 +2,7 @@
 
 ;; Maintainer: René Trappel <rtrappel@gmail.com>
 ;; URL: https://github.com/rtrppl/website2org
-;; Version: 0.3.3
+;; Version: 0.3.4
 ;; Package-Requires: ((emacs "26"))
 ;; Keywords: comm
 
@@ -25,6 +25,9 @@
 
 ;; website2org.el is a tool to turn a website into a minimal orgmode
 ;; buffer or .org file.
+;;
+;; 0.3.4
+;; - Improved line-breaks for new <p> blocks
 ;;
 ;; 0.3.3
 ;; - Fix for <wow-image> and <u style...>; fix for [] in links
@@ -450,7 +453,7 @@ Currently this function is not needed/used."
    
 (defun website2org-html-to-org (content og-url)
   "Turns the filtered HTML content into clean Orgmode content."
- (setq content (replace-regexp-in-string "<p>" "" content))
+ (setq content (replace-regexp-in-string "<p>" "\n\n" content))
  (setq content (replace-regexp-in-string "</p>" "\n" content))
  (setq content (replace-regexp-in-string "<strong>" "*" content))
  (setq content (replace-regexp-in-string "[ ]*</strong>" "* " content))

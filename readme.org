@@ -27,6 +27,9 @@ Still, there are some known short-comings even with otherwise working websites. 
 
 ** Change log
 
+*0.3.4*
+- Improved line-breaks for new <p> blocks
+
 *0.3.3*
 - Fix for =<wow-image>= and =<u style...>=; fix for =[]= in links (e.g. footnotes)
 
@@ -35,18 +38,6 @@ Still, there are some known short-comings even with otherwise working websites. 
 
 *0.3.1*
 - Removing class=anchor links from headlines; bug fix for repeating paragraphs when headlines are dropped in unfinished paragraphs; more bug fixes for bold and italics
-
-*0.3*
-- Fixes for detecting links in documents; =website2org-dired-file-to-org= transforms marked HTML files in =Dired= into Orgmode documents and places them into =website2org-directory= 
-
-*0.2.13*
-- Added =website2org-visual-fill-column-mode-p= configuration; =website2org-to-buffer= now creates read-only buffer; improvements in display of quotation marks before links 
-
-*0.2.12*
-- Fixed Substack double loading content bug (by deleting all scripts before processing the HTML)
-
-*0.2.11*
-- Switching from =wget= to =curl= as standard tool; better handling of Unicode escape sequences
 
 See also the [[./changelog.org][changelog]].
 
