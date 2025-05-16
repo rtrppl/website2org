@@ -596,13 +596,17 @@ Currently this function is not needed/used."
 
 (defun website2org-fix-relative-links (url og-url)
   "Turns relative URLs into complete URLs."
+  (when (or (not (string-suffix-p "/" og-url))
+	    (not (string-suffix-p ".html" og-url))
+	    (not (string-suffix-p ".htm" og-url)))
+    (setq og-url (concat og-url "/")))
   (let* ((path (file-name-directory og-url))
 	 (path (replace-regexp-in-string "\\(http.*?//.*?/\\).*" "\\1" path)))  
     (when (and (not (string-prefix-p "http" url))
 	       (not (string-prefix-p "//" url)))
       (when (and (string-prefix-p "/" url)
 		 (not (string-prefix-p "//" url)))
-        (setq url (concat og-url url))))
+        (setq url (concat path (string-remove-prefix "/" url)))))
     (when (string-prefix-p "\"" path)
       (setq path (string-remove-prefix "\"" path))
       (setq url (concat path url)))
