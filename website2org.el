@@ -118,45 +118,58 @@ website2org-url-to-org. Results will be presented in a buffer."
     (website2org-to-buffer url)))
 
 ;;;###autoload
-(defun website2org-url-to-org (url &optional dummy file)
- "Creates an Orgmode document from an URL or a file."
- (with-temp-buffer
-   (when (not file)
-     (website2org-create-local-cache-file url))
-   (let* ((content (website2org-load-file (or file website2org-cache-filename)))
-	  (url (or url (website2org-return-URL content)))
-	(title (website2org-process-html content "title" url))
-	(org-content (website2org-process-html content "content" url))
-	(time (format-time-string website2org-filename-time-format))
-        (filename)
-	(final))
-     (when (and website2org-archive
-	      (not file))
-       (shell-command (concat "open " website2org-archive-url url)))
-     (setq filename (replace-regexp-in-string "[\"\|',.:;?\s\\\/]" "_" title))
-     (when (> (length filename) 100)
-       (setq filename (substring title 0 100)))
-   (setq filename (replace-regexp-in-string "_\\{2,\\}" "_" filename))
-   (setq filename (concat website2org-directory time "-" filename))
-   (when (not file)
-     (website2org-delete-local-cache-file)
-     (with-current-buffer (find-file (concat filename ".org"))
-       (insert (concat "#+title: " time "-" (replace-regexp-in-string "[\(\)]" "-" title) "\n"))
-       (when website2org-additional-meta
-	 (insert (concat website2org-additional-meta "\n")))
-     (insert (concat "#+roam_key: " url "\n\n"))
-     (insert org-content)
-     (goto-char (point-min))))
-   (when file
-     (with-current-buffer (find-file-noselect (concat filename ".org"))
-       (insert (concat "#+title: " time "-" (replace-regexp-in-string "[\(\)]" "-" title) "\n"))
-       (when website2org-additional-meta
-	 (insert (concat website2org-additional-meta "\n")))
-       (insert (concat "#+roam_key: " url "\n\n"))
-       (insert org-content)
-       (save-buffer (current-buffer))
-       (kill-buffer (current-buffer)))))))
-   
+(defun website2org-url-to-org (url &optional dummy file noselect title-nodate)
+  "Creates an Orgmode document from an URL or a file."
+  (let ((final-filename)
+	(filename))
+    (with-temp-buffer
+      (when (not file)
+	(website2org-create-local-cache-file url))
+      (let* ((content (website2org-load-file (or file website2org-cache-filename)))
+	     (url (or url (website2org-return-URL content)))
+	     (title (website2org-process-html content "title" url))
+	     (org-content (website2org-process-html content "content" url))
+	     (time (format-time-string website2org-filename-time-format)))      
+	(when (and website2org-archive
+		   (not file))
+	  (shell-command (concat "open " website2org-archive-url url)))
+	(setq filename (replace-regexp-in-string "[\"\|',.:;?\s\\\/]" "_" title))
+	(when (> (length filename) 100)
+	  (setq filename (substring title 0 100)))
+	(setq filename (replace-regexp-in-string "_\\{2,\\}" "_" filename))
+	(setq filename (concat website2org-directory time "-" filename))
+	(when (not file)
+	  (website2org-delete-local-cache-file)
+	  (let ((buffer (if noselect
+			    (find-file-noselect (concat filename ".org"))
+			  (find-file (concat filename ".org")))))
+	    (with-current-buffer buffer
+	      (if title-nodate
+		  (insert (concat "#+title: " (replace-regexp-in-string "[\(\)]" "-" title) "\n"))
+		(insert (concat "#+title: " time "-" (replace-regexp-in-string "[\(\)]" "-" title) "\n")))
+	      (when website2org-additional-meta
+		(insert (concat website2org-additional-meta "\n")))
+	      (insert (concat "#+roam_key: " url "\n\n"))
+	      (insert org-content)
+	      (goto-char (point-min))
+	      (when noselect
+		(save-buffer (current-buffer))
+		(kill-buffer (current-buffer))))
+	    (when file
+	      (with-current-buffer (find-file-noselect (concat filename ".org"))
+		 (if title-nodate
+		     (insert (concat "#+title: " (replace-regexp-in-string "[\(\)]" "-" title) "\n"))
+		   (insert (concat "#+title: " time "-" (replace-regexp-in-string "[\(\)]" "-" title) "\n")))
+		(when website2org-additional-meta
+		  (insert (concat website2org-additional-meta "\n")))
+		(insert (concat "#+roam_key: " url "\n\n"))
+		(insert org-content)
+		(save-buffer (current-buffer))
+		(kill-buffer (current-buffer))))))))
+	(setq final-filename (concat filename ".org"))
+	final-filename))
+
+  
  ;;;###autoload
 (defun website2org-dired-file-to-org ()
   "Transforms selected files into Orgmode files and places them
