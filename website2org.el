@@ -2,8 +2,8 @@
 
 ;; Maintainer: René Trappel <rtrappel@gmail.com>
 ;; URL: https://github.com/rtrppl/website2org
-;; Version: 0.3.4
-;; Package-Requires: ((emacs "26"))
+;; Version: 0.3.5
+;; Package-Requires: ((emacs "26") (visual-fill-column "20250323.1529"))
 ;; Keywords: comm
 
 ;; This file is not part of GNU Emacs.
@@ -25,6 +25,9 @@
 
 ;; website2org.el is a tool to turn a website into a minimal orgmode
 ;; buffer or .org file.
+;;
+;; 0.3.5
+;; - Proper require for `visual-fill-column'
 ;;
 ;; 0.3.4
 ;; - Improved line-breaks for new <p> blocks
@@ -77,9 +80,10 @@
 (require 'org)
 (require 'xml)
 (require 'shr)
+(require 'visual-fill-column)
 
 (defvar website2org-datatransfer-tool-cmd "curl -L ") ;; alternatively use "wget -q "
-(defvar website2org-datatransfer-tool-cmd-mod " -o ") ;; alternatively use "wget -q " "-o ") ;; for wget use "-O "
+(defvar website2org-datatransfer-tool-cmd-mod " -o ") ;; for wget use "-O "
 (defvar website2org-cache-filename "~/website2org-cache.html")
 (defvar website2org-visual-fill-column-mode-p t)
 
@@ -227,7 +231,7 @@ into `website2org-directory'."
             map))
 
 (defun website2org-create-local-cache-file (URL)
-  "Uses wget to download a website into a local cache file."
+  "Uses wget or curl to download a website into a local cache file."
   (shell-command (concat website2org-datatransfer-tool-cmd "\"" URL "\"" website2org-datatransfer-tool-cmd-mod  website2org-cache-filename) t))
 
 (defun website2org-load-file (filename)
