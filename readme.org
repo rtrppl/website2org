@@ -27,6 +27,9 @@ Still, there are some known short-comings even with otherwise working websites. 
 
 ** Change log
 
+*0.3.6*
+- Stopped requiring `visual-fill-column'; =visual-fill-column= will be used if installed and =website2org-visual-fill-column-mode-p= is non-nil
+
 *0.3.5*
 - Proper require for =visual-fill-column=
 
@@ -94,7 +97,8 @@ Additionally you can set these values:
 (setq website2org-directory "/path/to/where/websites/should/be/stored/") 
 (setq website2org-filename-time-format "%Y%m%d%H%M%S")
 (setq website2org-archive nil) ;; If this is set to t, the URL called will be send to the archiving URL below
-(setq website2org-archive-url "https://archive.today/") 
+(setq website2org-archive-url "https://archive.today/")
+(setq website2org-visual-fill-column-mode-p t) ;; this will use `visual-fill-column-mode' if the package is installed
 #+end_src
 
 

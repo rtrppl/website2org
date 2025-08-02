@@ -2,8 +2,8 @@
 
 ;; Maintainer: René Trappel <rtrappel@gmail.com>
 ;; URL: https://github.com/rtrppl/website2org
-;; Version: 0.3.5
-;; Package-Requires: ((emacs "26") (visual-fill-column "20250323.1529"))
+;; Version: 0.3.6
+;; Package-Requires: ((emacs "26"))
 ;; Keywords: comm
 
 ;; This file is not part of GNU Emacs.
@@ -25,6 +25,10 @@
 
 ;; website2org.el is a tool to turn a website into a minimal orgmode
 ;; buffer or .org file.
+;;
+;; 0.3.6
+;; - Stopped requiring `visual-fill-column'; `visual-fill-column' will be
+;; used if installed and `website2org-visual-fill-column-mode-p' is non-nil
 ;;
 ;; 0.3.5
 ;; - Proper require for `visual-fill-column'
@@ -80,12 +84,13 @@
 (require 'org)
 (require 'xml)
 (require 'shr)
-(require 'visual-fill-column)
 
 (defvar website2org-datatransfer-tool-cmd "curl -L ") ;; alternatively use "wget -q "
 (defvar website2org-datatransfer-tool-cmd-mod " -o ") ;; for wget use "-O "
 (defvar website2org-cache-filename "~/website2org-cache.html")
-(defvar website2org-visual-fill-column-mode-p t)
+(defvar website2org-visual-fill-column-mode-p nil) ;; set this to "t" if you wan to 
+;; use `visual-fill-column-mode' in the temporary buffer; `visual-fill-column-mode'
+;; must be installed.
 
 ;; Turn website2org-additional-meta nil if not applicable. This is for
 ;; use in orgrr (https://github.com/rtrppl/orgrr).
@@ -208,6 +213,7 @@ into `website2org-directory'."
       (switch-to-buffer "website2org")
       (insert final)
       (when website2org-visual-fill-column-mode-p
+	(require 'visual-fill-column nil t)
 	(visual-fill-column-mode))
       (setq-local buffer-read-only t)))
   (website2org-prepare-findings-buffer "website2org")))
