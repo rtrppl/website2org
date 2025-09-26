@@ -142,7 +142,7 @@ website2org-url-to-org. Results will be presented in a buffer."
 	(when (and website2org-archive
 		   (not file))
 	  (shell-command (concat "open " website2org-archive-url url)))
-	(setq filename (replace-regexp-in-string "[\"\|',.:;?\s\\\/]" "_" title))
+	(setq filename (replace-regexp-in-string "[\"\|'”“？,.:;?\s\\\/]" "_" title))
 	(when (> (length filename) 100)
 	  (setq filename (substring title 0 100)))
 	(setq filename (replace-regexp-in-string "_\\{2,\\}" "_" filename))
@@ -260,7 +260,7 @@ into `website2org-directory'."
 	 (error-in-log)
 	 (title))
     (setq content (website2org-cleanup-remove-footer content))
-    (setq content (replace-regexp-in-string "[\s =]*<script.*</script>[\s=]*" "" content))
+    (setq content (replace-regexp-in-string "<script\\(\\(.\\|\n\\)*?\\)</script>" "" content))
     (with-temp-buffer
       (insert content)
       (goto-char (point-min))
