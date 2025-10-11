@@ -142,9 +142,10 @@ website2org-url-to-org. Results will be presented in a buffer."
 	(when (and website2org-archive
 		   (not file))
 	  (shell-command (concat "open " website2org-archive-url url)))
-	(setq filename (replace-regexp-in-string "[\"\|'”“？,.:;?\s\\\/]" "_" title))
-	(when (> (length filename) 100)
-	  (setq filename (substring title 0 100)))
+	(setq filename (replace-regexp-in-string "[]\\[\"“”|,.:;?'´`’\*]" "_" title))
+	(when (> (length filename) 80)
+	  (setq filename (substring filename 0 80))
+	  (setq filename (string-trim filename)))
 	(setq filename (replace-regexp-in-string "_\\{2,\\}" "_" filename))
 	(setq filename (concat website2org-directory time "-" filename))
 	(when (not file)
@@ -166,16 +167,16 @@ website2org-url-to-org. Results will be presented in a buffer."
 		(kill-buffer (current-buffer))))
 	    (when file
 	      (with-current-buffer (find-file-noselect (concat filename ".org"))
-		 (if title-nodate
-		     (insert (concat "#+title: " (replace-regexp-in-string "[\(\)]" "-" title) "\n"))
-		   (insert (concat "#+title: " time "-" (replace-regexp-in-string "[\(\)]" "-" title) "\n")))
+		(if title-nodate
+		    (insert (concat "#+title: " (replace-regexp-in-string "[\(\)]" "-" title) "\n"))
+		  (insert (concat "#+title: " time "-" (replace-regexp-in-string "[\(\)]" "-" title) "\n")))
 		(when website2org-additional-meta
 		  (insert (concat website2org-additional-meta "\n")))
 		(insert (concat "#+roam_key: " url "\n\n"))
 		(insert org-content)
 		(save-buffer (current-buffer))
 		(kill-buffer (current-buffer))))))))
-	(setq final-filename (concat filename ".org"))
+    (setq final-filename (concat filename ".org"))
 	final-filename))
 
   
