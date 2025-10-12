@@ -142,7 +142,7 @@ website2org-url-to-org. Results will be presented in a buffer."
 	(when (and website2org-archive
 		   (not file))
 	  (shell-command (concat "open " website2org-archive-url url)))
-	(setq filename (replace-regexp-in-string "[]\\[\"“”|,.:;?'´`’\*]" "_" title))
+	(setq filename (replace-regexp-in-string "[]\\[\"“”|,.:;?'´`’《》【】\*]" "_" title))
 	(when (> (length filename) 80)
 	  (setq filename (substring filename 0 80))
 	  (setq filename (string-trim filename)))
@@ -239,7 +239,7 @@ into `website2org-directory'."
 
 (defun website2org-create-local-cache-file (URL)
   "Uses wget or curl to download a website into a local cache file."
-  (shell-command (concat website2org-datatransfer-tool-cmd "\"" URL "\"" website2org-datatransfer-tool-cmd-mod  website2org-cache-filename) t))
+  (shell-command (concat website2org-datatransfer-tool-cmd "\"" URL "\"" website2org-datatransfer-tool-cmd-mod "\"" (expand-file-name website2org-cache-filename) "\"") t))
 
 (defun website2org-load-file (filename)
   "Returns the plain html of a html-file."
