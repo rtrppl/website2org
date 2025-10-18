@@ -2,7 +2,7 @@
 
 ;; Maintainer: René Trappel <rtrappel@gmail.com>
 ;; URL: https://github.com/rtrppl/website2org
-;; Version: 0.3.6
+;; Version: 0.3.7
 ;; Package-Requires: ((emacs "26"))
 ;; Keywords: comm
 
@@ -25,6 +25,9 @@
 
 ;; website2org.el is a tool to turn a website into a minimal orgmode
 ;; buffer or .org file.
+;;
+;; 0.3.7
+;; - Small fixes for <b class...> 
 ;;
 ;; 0.3.6
 ;; - Stopped requiring `visual-fill-column'; `visual-fill-column' will be
@@ -483,8 +486,8 @@ Currently this function is not needed/used."
  (setq content (replace-regexp-in-string "[ ]*</strong>" "* " content))
  (setq content (replace-regexp-in-string "\s*__\\*\\*" "*" content))
  (setq content (replace-regexp-in-string "\\*\\*\s," "*, " content))
- (setq content (replace-regexp-in-string "<b>" "*" content))
- (setq content (replace-regexp-in-string "[ ]*</b>" "*" content))
+ (setq content (replace-regexp-in-string "<b[^>]*>" "*" content))
+ (setq content (replace-regexp-in-string "[ ]*</b>" "* " content))
  (setq content (replace-regexp-in-string "<kbd>" "*" content))
  (setq content (replace-regexp-in-string "[ ]*</kbd>" "*" content))
  (setq content (replace-regexp-in-string "<dl>" "" content))

@@ -27,6 +27,9 @@ Still, there are some known short-comings even with otherwise working websites. 
 
 ** Change log
 
+*0.3.7*
+- Small fixes for =<b class...>= 
+
 *0.3.6*
 - Stopped requiring `visual-fill-column'; =visual-fill-column= will be used if installed and =website2org-visual-fill-column-mode-p= is non-nil
 
