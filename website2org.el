@@ -2,7 +2,7 @@
 
 ;; Maintainer: René Trappel <rtrappel@gmail.com>
 ;; URL: https://github.com/rtrppl/website2org
-;; Version: 0.3.7
+;; Version: 0.3.8
 ;; Package-Requires: ((emacs "26"))
 ;; Keywords: comm
 
@@ -25,6 +25,9 @@
 
 ;; website2org.el is a tool to turn a website into a minimal orgmode
 ;; buffer or .org file.
+;;
+;; 0.3.8 
+;; - Small fix for <mdspan...>
 ;;
 ;; 0.3.7
 ;; - Small fixes for <b class...> 
@@ -145,7 +148,7 @@ website2org-url-to-org. Results will be presented in a buffer."
 	(when (and website2org-archive
 		   (not file))
 	  (shell-command (concat "open " website2org-archive-url url)))
-	(setq filename (replace-regexp-in-string "[]\\[\"“”|,.:;?'´`’《》【】\*]" "_" title))
+	(setq filename (replace-regexp-in-string "[]\\[\"“”|,.:;?'´`’｜ ：《》【】\*] " "_" title))
 	(when (> (length filename) 80)
 	  (setq filename (substring filename 0 80))
 	  (setq filename (string-trim filename)))
@@ -437,6 +440,8 @@ into `website2org-directory'."
   (setq content (replace-regexp-in-string "<strong\\([^>]*\\)>" "<strong>" content))
   (setq content (replace-regexp-in-string "<span\\([^>]*\\)>" "" content))
   (setq content (replace-regexp-in-string "</span\\([^>]*\\)>" "" content))
+  (setq content (replace-regexp-in-string "<mdspan\\([^>]*\\)>" "" content))
+  (setq content (replace-regexp-in-string "</mdspan\\([^>]*\\)>" "" content))
   (setq content (replace-regexp-in-string "<div\\([^>]*\\)>" "" content))
   (setq content (replace-regexp-in-string "<meta[^>]*>" "" content))
   (setq content (replace-regexp-in-string "</meta\\([^>]*\\)>" "" content))
