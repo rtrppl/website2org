@@ -148,7 +148,7 @@ website2org-url-to-org. Results will be presented in a buffer."
 	(when (and website2org-archive
 		   (not file))
 	  (shell-command (concat "open " website2org-archive-url url)))
-	(setq filename (replace-regexp-in-string "[]\\[\"“”|,.:;?'´`’｜ ：《》【】\*] " "_" title))
+	(setq filename (replace-regexp-in-string "[]\\[\"“”\|\/,.:;?'´`’\ ：《》、【】丨 \*]" "_" title))
 	(when (> (length filename) 80)
 	  (setq filename (substring filename 0 80))
 	  (setq filename (string-trim filename)))
