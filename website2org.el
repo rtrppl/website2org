@@ -108,6 +108,10 @@
 (defvar website2org-archive nil)
 (defvar website2org-archive-url "https://archive.today/") 
 
+(defvar website2org-browser-cmd (shell-quote-argument "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"))
+(defvar website2org-browser-cmd-arg " --user-agent=\"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36\" --dump-dom --virtual-time-budget=31292 ")
+
+
 (defun website2org ()
   "Use the URL at point or an entered URL and initiate 
 website2org-url-to-org. Creates an org-file in website2org-directory."
@@ -133,13 +137,15 @@ website2org-url-to-org. Results will be presented in a buffer."
     (website2org-to-buffer url)))
 
 ;;;###autoload
-(defun website2org-url-to-org (url &optional dummy file noselect title-nodate)
+(defun website2org-url-to-org (url &optional dummy file noselect title-nodate tool)
   "Creates an Orgmode document from an URL or a file."
   (let ((final-filename)
 	(filename))
     (with-temp-buffer
       (when (not file)
-	(website2org-create-local-cache-file url))
+	(if (string-equal tool "browser")
+	    (website2org-create-local-cache-file url "browser")
+	(website2org-create-local-cache-file url)))
       (let* ((content (website2org-load-file (or file website2org-cache-filename)))
 	     (url (or url (website2org-return-URL content)))
 	     (title (website2org-process-html content "title" url))
@@ -243,9 +249,21 @@ into `website2org-directory'."
 	    (define-key map (kbd "SPC") 'scroll-up-command)
             map))
 
-(defun website2org-create-local-cache-file (URL)
-  "Uses wget or curl to download a website into a local cache file."
-  (shell-command (concat website2org-datatransfer-tool-cmd "\"" URL "\"" website2org-datatransfer-tool-cmd-mod "\"" (expand-file-name website2org-cache-filename) "\"") t))
+(defun website2org-create-local-cache-file (URL &optional tool)
+  "Uses wget or curl or a headless browser to download a website into a local cache file."
+   (let ((cmd)
+	 (waiting 60))
+     (with-temp-buffer 
+       (when (string-equal tool "browser")
+	 (message (format "Now delaying for %s seconds. Don't panic." waiting))
+	 (run-at-time waiting nil
+		      (lambda ()
+			(message "Done waiting.")))
+	 (setq cmd (concat website2org-browser-cmd website2org-browser-cmd-arg "\"" URL "\" >" (expand-file-name website2org-cache-filename)))
+	 (shell-command cmd t))
+       (when (not (string-equal tool "browser"))
+	 (setq cmd (concat website2org-datatransfer-tool-cmd "\"" URL "\"" website2org-datatransfer-tool-cmd-mod "\"" (expand-file-name website2org-cache-filename) "\""))
+	 (shell-command cmd t)))))
 
 (defun website2org-load-file (filename)
   "Returns the plain html of a html-file."
