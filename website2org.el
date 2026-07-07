@@ -84,6 +84,7 @@
 (require 'org)
 (require 'xml)
 (require 'shr)
+(require 'dom)
 
 (defvar website2org-wget-cmd "wget -q ")
 (defvar website2org-cache-filename "~/website2org-cache.html")
@@ -96,7 +97,10 @@
 (defvar website2org-filename-time-format "%Y%m%d%H%M%S")
 
 (defvar website2org-archive nil)
-(defvar website2org-archive-url "https://archive.today/") 
+(defvar website2org-archive-url "https://archive.today/")
+
+(defvar website2org-h1-p nil)
+(defvar website2org-url nil) 
 
 (defun website2org ()
   "Use the URL at point or an entered URL and initiate 
@@ -149,11 +153,14 @@ website2org-url-to-org. Results will be presented in a buffer."
 
 (defun website2org-to-buffer (url &optional dummy)
   "Creates an Orgmode buffer from an URL."
+  (setq website2org-h1-p nil)
+  (setq website2org-url url)
   (with-temp-buffer
     (website2org-create-local-cache-file url)
     (let* ((content (website2org-load-file website2org-cache-filename))
 	   (title (website2org-process-html content "title" url))
-	   (org-content (website2org-process-html content "content" url))
+	   (org-content (website2org-parse-html content))
+	   (org-content (website2org-cleanup-org org-content))
 	   (final))
       (website2org-delete-local-cache-file)
     (setq final (concat "#+roam_key: " url "\n\n" org-content))
@@ -161,8 +168,9 @@ website2org-url-to-org. Results will be presented in a buffer."
     (with-current-buffer (get-buffer-create "website2org")
       (erase-buffer)
       (switch-to-buffer "website2org")
-      (insert final)))
-  (website2org-prepare-findings-buffer "website2org")))
+      (insert final))
+    (setq website2org-url nil)
+  (website2org-prepare-findings-buffer "website2org"))))
 
 (defun website2org-prepare-findings-buffer (buffer)
  "Preparing the orgrr findings buffer."
@@ -186,6 +194,7 @@ website2org-url-to-org. Results will be presented in a buffer."
   "Uses wget to download a website into a local cache file."
   (shell-command (concat website2org-wget-cmd "\"" URL "\"" " -O " website2org-cache-filename) t))
 
+
 (defun website2org-load-file (filename)
   "Returns the plain html of a html-file."
   (let ((content))
@@ -203,74 +212,128 @@ website2org-url-to-org. Results will be presented in a buffer."
   (let ((processed-content)
 	(dom))
     (with-temp-buffer
+      (setq content (website2org-cleanup-remove-footer content)) 
+      (setq content (website2org-cleanup-remove-header content))
       (insert content)
       (setq dom (libxml-parse-html-region (point-min) (point-max))))
     (with-temp-buffer
-      (website2org-insert-dom dom)
+      (website2org-render dom)
       (setq processed-content (buffer-substring-no-properties (point-min)(point-max))))
     processed-content))
 
-(defun website2org-insert-dom (dom &optional in-span)
-  "Recursively insert a DOM tree as Orgmode."
-  (unless (stringp dom) ;; Ignore plain text nodes
-    (let* ((tag (symbol-name (car dom)))  ;; Convert symbol to string
-           (attrs (cadr dom))
-           (children (cddr dom))
-	   (insert-p)
-	   (in-span (or in-span (or (string= tag "h1")
-				    (string= tag "a"))))
-           (attr-string ""))
-      ;; Construct attribute string manually
-	(dolist (attr attrs)
-	  (when (string= (symbol-name (car attr)) "href")
-	    (setq attr-string (cdr attr)))
-;	  (setq attr-string (concat attr-string " " (symbol-name (car attr)) "=\"" (cdr attr) "\"")))
-	(when (string-prefix-p "javascript" attr-string t)
-	  (print attr)))
-      (when (not (or (string= tag "script")
-		     (string= tag "style")))
+(defun website2org-render (node)
+  "Dispatching the tag."
+  (cond
+   ((stringp node)
+    (insert (string-trim node)))
+   (t
+    (website2org-render-tag node))))
 
-	;; Insert opening tag with attributes
-;	(insert "<" tag attr-string ">")
-	(when (string= tag "h1")
-	  (setq insert-p t)
-	  (insert "\n\n* "))
-	(when (string= tag "a")
-	  (print attr-string))
-	(when (and (string= tag "a")
-		   (not (string-prefix-p "javascript" attr-string t)))
-	  (setq insert-p t)
-	  (insert (concat " [[" attr-string "][")))
-	(when (string= tag "p")
-	  (setq insert-p t))
-	(when (string= tag "span")
-	  (when in-span
-	    (setq insert-p t)))
-	(when (string= tag "em")
-	  (insert "/")
-	  (setq insert-p t))
-      ;; Insert children
-      (dolist (child children)
-        (if (and (stringp child)
-		   insert-p)
-	    (progn
-	      (when (not in-span)
-		(insert (string-trim child))) ;; Print text node
-	      (when in-span
-		(insert (string-trim child))))
-          (website2org-insert-dom child in-span))) ;; Recursive call for nested elements
+(defun website2org-render-tag (node)
+  "Rendering a tag into proper org."
+  (pcase (dom-tag node)
+    ('head (website2org-render-nil node))
+    ('footer (website2org-render-nil node))
+    ('script (website2org-render-nil node))
+    ('h1 (website2org-render-h1 node))
+    ('h2 (website2org-render-h2 node))
+    ('h3 (website2org-render-h3 node))
+    ('h4 (website2org-render-h4 node))
+    ('p (website2org-render-p node))
+    ('li (website2org-render-li node))
+    ('a (website2org-render-a node))
+    ('span (website2org-render-span node))
+    ('em (website2org-render-em node))
+;    ('div (website2org-render-div node))
+    ('strong (website2org-render-strong node))
+    (_   (website2org-render-children node))))
 
-      ;; Insert closing tag
-      (when insert-p
-	(when (string= tag "em")
-	  (insert "/ "))
-	(when (string= tag "a")
-	  (insert "]] "))
-	(when (string= tag "p")
-	  (insert "\n\n"))
-	(when (string= tag "h1")
-	  (insert "\n\n"))
-	)))))
+(defun website2org-render-children (node)
+  (dolist (child (dom-children node))
+    (website2org-render child)))
+
+(defun website2org-render-h1 (node)
+  (when (not (string-equal (dom-text node) ""))
+    (setq website2org-h1-p t)
+    (insert "\n\n* ")
+    (website2org-render-children node)
+    (insert "\n\n")))
+
+(defun website2org-render-h2 (node)
+  "Rendering a h2 heading."
+  (when website2org-h1-p
+    (insert "\n\n** ")
+    (website2org-render-children node)
+    (insert "\n\n")))
+
+(defun website2org-render-h3 (node)
+  "Rendering a h3 heading." 
+  (when website2org-h1-p
+    (insert "\n\n*** ")
+    (website2org-render-children node)
+    (insert "\n\n")))
+
+(defun website2org-render-h4 (node)
+  "Rendering a h4 heading." 
+  (when website2org-h1-p
+    (insert "\n\n**** ")
+    (website2org-render-children node)
+    (insert "\n\n")))
+
+(defun website2org-render-nil (node)
+  (insert "\n"))
+
+(defun website2org-render-div (node)
+;  (when website2org-h1-p
+    (print node))
+    (let ((class (dom-attr node 'class)))
+      (when (not (string-match-p "footer" class))
+	(website2org-render-children node)))))
+
+
+(defun website2org-render-p (node)
+  (when website2org-h1-p
+    (website2org-render-children node)
+    (insert "\n\n")))
+
+(defun website2org-render-span (node)
+  (when website2org-h1-p
+    (insert " ")
+    (website2org-render-children node)))
+
+(defun website2org-render-li (node))
+  (when website2org-h1-p
+    (insert "\n- ")
+    (website2org-render-children node)
+    (insert "\n")))
+
+(defun website2org-render-em (node)
+  (when website2org-h1-p
+    (insert " /")
+    (website2org-render-children node)
+    (insert "/ ")))
+
+(defun website2org-render-strong (node)
+  (when website2org-h1-p
+    (insert " *")
+    (website2org-render-children node)
+    (insert "* ")))
+
+(defun website2org-render-a (node)
+  "Rendering href."
+  (when website2org-h1-p
+    (let* ((href (dom-attr node 'href))
+	   (text (dom-text node))
+	   (text (replace-regexp-in-string "[\n\t]" "" text))
+	   (text (replace-regexp-in-string "=" " " text))
+	   (text (replace-regexp-in-string "^[ \t]+" "" text))
+	   (href (website2org-fix-relative-links href website2org-url)))
+      (unless (or (string-prefix-p "javascript:" href t)
+		   (string-equal text ""))
+	(insert "[[" href "][")
+	(insert text)
+	(insert "]]")
+	(insert " ")))))
 
 (defun website2org-insert-token-h1 (children)
  "Transform a H1 headline in a DOM into Orgmode."
