@@ -221,11 +221,29 @@ website2org-url-to-org. Results will be presented in a buffer."
       (setq processed-content (buffer-substring-no-properties (point-min)(point-max))))
     processed-content))
 
+(defun website2org-render-old (node)
+  "Dispatching the tag."
+   (when (dom-by-tag node 'article)
+     (print "contains article"))
+  (cond
+   ((stringp node)
+    (insert (string-trim node)))
+   (t
+    (website2org-render-tag node))))
+
 (defun website2org-render (node)
   "Dispatching the tag."
   (cond
    ((stringp node)
     (insert (string-trim node)))
+   (t
+    (website2org-render-tag node))))
+
+(defun website2org-render-notrim (node)
+  "Dispatching the tag without triming white space."
+  (cond
+   ((stringp node)
+    (insert node))
    (t
     (website2org-render-tag node))))
 
@@ -235,77 +253,117 @@ website2org-url-to-org. Results will be presented in a buffer."
     ('head (website2org-render-nil node))
     ('footer (website2org-render-nil node))
     ('script (website2org-render-nil node))
+    ('comment (website2org-render-nil node))
     ('h1 (website2org-render-h1 node))
     ('h2 (website2org-render-h2 node))
     ('h3 (website2org-render-h3 node))
     ('h4 (website2org-render-h4 node))
+    ('br (website2org-render-br node))
     ('p (website2org-render-p node))
     ('li (website2org-render-li node))
+    ('ul (website2org-render-ul node))
     ('a (website2org-render-a node))
+    ('img (website2org-render-img node))
+    ('blockquote (website2org-render-blockquote node))
+    ('pre (website2org-render-pre node))
     ('span (website2org-render-span node))
+    ('div (website2org-render-div node))
     ('em (website2org-render-em node))
-;    ('div (website2org-render-div node))
     ('strong (website2org-render-strong node))
+    ('kbd (website2org-render-kbd node))
+    ('code (website2org-render-kbd node))
     (_   (website2org-render-children node))))
 
 (defun website2org-render-children (node)
   (dolist (child (dom-children node))
     (website2org-render child)))
 
+(defun website2org-render-children-notrim (node)
+  (dolist (child (dom-children node))
+    (website2org-render-notrim child)))
+
 (defun website2org-render-h1 (node)
   (when (not (string-equal (dom-text node) ""))
     (setq website2org-h1-p t)
-    (insert "\n\n* ")
+    (insert "* ")
     (website2org-render-children node)
     (insert "\n\n")))
 
 (defun website2org-render-h2 (node)
   "Rendering a h2 heading."
   (when website2org-h1-p
-    (insert "\n\n** ")
+    (insert "** ")
     (website2org-render-children node)
     (insert "\n\n")))
+
+(defun website2org-render-blockquote (node)
+  "Rendering a blockquote."
+  (when website2org-h1-p
+    (insert "\n#+BEGIN_QUOTE\n")
+    (website2org-render-children node)
+    (insert "\n#+END_QUOTE\n\n")))
+
+(defun website2org-render-pre (node)
+  "Rendering a pre."
+  (when website2org-h1-p
+    (insert "#+BEGIN_SRC\n")
+    (website2org-render-children-notrim node)
+    (insert "\n#+END_SRC\n\n")))
 
 (defun website2org-render-h3 (node)
   "Rendering a h3 heading." 
   (when website2org-h1-p
-    (insert "\n\n*** ")
+    (insert "*** ")
     (website2org-render-children node)
     (insert "\n\n")))
 
 (defun website2org-render-h4 (node)
   "Rendering a h4 heading." 
   (when website2org-h1-p
-    (insert "\n\n**** ")
+    (insert "**** ")
     (website2org-render-children node)
+    (insert "\n\n")))
+
+(defun website2org-render-br (node)
+  "Rendering a br tag." 
+  (when website2org-h1-p
     (insert "\n\n")))
 
 (defun website2org-render-nil (node)
   (insert "\n"))
-
-(defun website2org-render-div (node)
-;  (when website2org-h1-p
-    (print node))
-    (let ((class (dom-attr node 'class)))
-      (when (not (string-match-p "footer" class))
-	(website2org-render-children node)))))
-
 
 (defun website2org-render-p (node)
   (when website2org-h1-p
     (website2org-render-children node)
     (insert "\n\n")))
 
+(defun website2org-render-div (node)
+  (when website2org-h1-p
+    (website2org-render-children node)
+    (insert "\n\n")))
+
 (defun website2org-render-span (node)
   (when website2org-h1-p
-    (insert " ")
-    (website2org-render-children node)))
-
-(defun website2org-render-li (node))
-  (when website2org-h1-p
-    (insert "\n- ")
     (website2org-render-children node)
-    (insert "\n")))
+    (insert "")))
+
+(defun website2org-render-li (node)
+  (when website2org-h1-p
+    (if (seq-some (lambda (child)
+                    (and (listp child)
+                         (memq (dom-tag child)
+                               '(h1 h2 h3 h4 h5 h6))))
+                  (dom-children node))
+        (website2org-render-children node)
+      (insert "- ")
+      (website2org-render-children node)
+      (insert "\n"))))
+
+(defun website2org-render-ul (node)
+  (when website2org-h1-p
+    (insert "\n")
+    (website2org-render-children node)
+    (insert "\n\n")))
 
 (defun website2org-render-em (node)
   (when website2org-h1-p
@@ -319,21 +377,39 @@ website2org-url-to-org. Results will be presented in a buffer."
     (website2org-render-children node)
     (insert "* ")))
 
+(defun website2org-render-kbd (node)
+  (when website2org-h1-p
+    (insert " ~")
+    (website2org-render-children node)
+    (insert "~ ")))
+
 (defun website2org-render-a (node)
   "Rendering href."
   (when website2org-h1-p
     (let* ((href (dom-attr node 'href))
 	   (text (dom-text node))
 	   (text (replace-regexp-in-string "[\n\t]" "" text))
+	   (text (replace-regexp-in-string "\s+" " " text))
 	   (text (replace-regexp-in-string "=" " " text))
 	   (text (replace-regexp-in-string "^[ \t]+" "" text))
 	   (href (website2org-fix-relative-links href website2org-url)))
       (unless (or (string-prefix-p "javascript:" href t)
 		   (string-equal text ""))
-	(insert "[[" href "][")
+	(insert (concat "[[" href "][" text "]] "))))))
+
+(defun website2org-render-img (node)
+  "Rendering href."
+  (when website2org-h1-p
+    (let* ((href (dom-attr node 'src))
+	   (text (file-name-nondirectory href))
+	   (href (website2org-fix-relative-image-links href website2org-url))
+	   (text (replace-regexp-in-string "[+_-]" " " text)))
+      (unless (or (string-prefix-p "javascript:" href t)
+		   (string-equal text ""))
+	(insert "\n\n(image: [[" href "][")
 	(insert text)
-	(insert "]]")
-	(insert " ")))))
+	(insert "]])")
+	(insert "\n\n")))))
 
 (defun website2org-insert-token-h1 (children)
  "Transform a H1 headline in a DOM into Orgmode."
@@ -736,55 +812,23 @@ Currently this function is not needed/used."
 
 (defun website2org-cleanup-org (content)
   "Final clean-up of the Orgmode content."
-  (with-temp-buffer
-      (insert content)
-      (goto-char (point-min))
-;; This was something Pandoc did a lot. Perhaps not necessary anymore.
-      (while (re-search-forward "^:PROPERTIES:\n\\([^:]*:.*\n\\):END:\n?" nil t)
-	(replace-match "\n"))
-      (goto-char (point-min))
-      (while (not (eobp))
-	(let ((line (thing-at-point 'line t)))
-	  (when (string-match-p "\\[\\[data:image" line)
-	    (delete-region (line-beginning-position) (line-end-position)))
-	  (when (string-match-p "\s*<source" line)
-	    (delete-region (line-beginning-position) (line-end-position)))
-	  (when (string-match-p "\s*<style" line)
-	    (delete-region (line-beginning-position) (line-end-position)))
-	  (when (string-match-p "\s*<a\s" line)
-	    (delete-region (line-beginning-position) (line-end-position)))
-	  (when (string-match-p "\s*<title" line)
-	    (delete-region (line-beginning-position) (line-end-position)))
-	  (when (string-match-p "\s*<tool-tip" line)
-	    (delete-region (line-beginning-position) (line-end-position)))
-	  (forward-line)))	     
-      (setq content (buffer-substring-no-properties (point-min)(point-max))))
 ;; proper punctuation  
-    (setq content (replace-regexp-in-string "/\s\\([,;.:!?)]\\)" "/\\1" content)) 
-    (setq content (replace-regexp-in-string "\\*\s\\([,;.:!?)]\\)" "*\\1" content))
-    (setq content (replace-regexp-in-string "\\([(]\\)\s/" "\\1/" content))
+    (setq content (replace-regexp-in-string "\s\\([,;.:!?)]\\)" "\\1" content)) 
 ;; always at least one space before links
     (setq content (replace-regexp-in-string "\\([^ \(]\\)\\[\\[" "\\1 [[" content))
+;; no more than one space in the text
+    (setq content (replace-regexp-in-string "\\([0-9A-z~,;.!?/]\\)\s\s" "\\1\s" content)) 
 ;; no empty lines that just start with \  
     (setq content (replace-regexp-in-string "[\\]*$" "" content)) 
 ;; no empty lines that just start with * 
     (setq content (replace-regexp-in-string "^[\*>]* $" "" content))
     (setq content (replace-regexp-in-string "^[\*>]*$" "" content))
-;; no new line starts with a space
-    (setq content (replace-regexp-in-string "^\s*" "" content)) 
-;; no more than one space 
-    (setq content (replace-regexp-in-string "\s\\{2,\\}" "\s" content))
 ;; no empty lines that just start with - or = 
     (setq content (replace-regexp-in-string "^- $\\|^-$" "" content))
     (setq content (replace-regexp-in-string "^= $\\|^=$" "" content))
 ;; no more than one empty line
     (setq content (replace-regexp-in-string "\n\\{2,\\}" "\n\n" content))
-;; proper italics
-    (setq content (replace-regexp-in-string " \/[ ]*$" "/" content))
-;; proper italics for links
-    (setq content (replace-regexp-in-string " \/ \\[\\[" " /[[" content))
-    (setq content (replace-regexp-in-string "\\]\\[\/[ ]*" "][/" content))
-;; proper separatuion of links from italics or strong 
+;; proper separation of links from italics or strong 
     (setq content (replace-regexp-in-string "\]\]\\*" "]] *" content))
 ;; proper strong
     (setq content (replace-regexp-in-string "\\*\\*" "*" content))
@@ -793,17 +837,7 @@ Currently this function is not needed/used."
 ;; no empty line before END_QUOTE
     (setq content (replace-regexp-in-string "^\n#\\+END_QUOTE" "#+END_QUOTE" content))
 ;; no empty line after BEGIN_QUOTE
-    (setq content (replace-regexp-in-string "^#\\+BEGIN_QUOTE\n\n" "#+BEGIN_QUOTE\n" content))
-;; remains a TODO
-    (with-temp-buffer
-      (insert content)
-      (goto-char (point-min))
-      (while (re-search-forward "\\(^-.*\n\\)\\(^[ \t]*\n\\)\\(^-.*\n\\)" nil t)
-	(when (match-string 0)
-	  (let* ((replacement (concat (match-string 1) (match-string 3))))
-	    (replace-match replacement t t)))
-	(forward-line -1))
-      (setq content (buffer-substring-no-properties (point-min)(point-max)))))
+    (setq content (replace-regexp-in-string "^#\\+BEGIN_QUOTE\n\n" "#+BEGIN_QUOTE\n" content)))
 
 (provide 'website2org)
 
